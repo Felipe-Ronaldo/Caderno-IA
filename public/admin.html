@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Caderno IA — Painel admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cover:#1f3b32; --cover-2:#122019; --paper:#f7f6ef;
+    --ink:#1e3a8a; --ink-dark:#12244f; --pencil:#4b4b46; --pencil-soft:#8a8a80;
+    --red-pen:#b5342f; --highlight:#ffe28a;
+    --radius:12px; --radius-sm:8px;
+    --shadow:0 14px 34px -16px rgba(10,20,15,0.45);
+    --font-display:'Space Grotesk',sans-serif; --font-body:'IBM Plex Sans',sans-serif; --font-mono:'IBM Plex Mono',monospace;
+  }
+  *,*::before,*::after{box-sizing:border-box;}
+  body{
+    margin:0; min-height:100vh; font-family:var(--font-body); color:var(--ink-dark);
+    background:radial-gradient(circle at 10% 0%, rgba(255,255,255,0.05), transparent 40%),
+      linear-gradient(180deg,var(--cover) 0%,var(--cover-2) 100%);
+    background-attachment:fixed;
+  }
+  h1,h2{font-family:var(--font-display); margin:0; letter-spacing:-0.01em;}
+  .wrap{max-width:880px; margin:0 auto; padding:28px 20px 80px;}
+  .topbar{display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; padding:6px 4px 22px;}
+  .brand{display:flex; align-items:center; gap:12px;}
+  .brand__mark{width:40px; height:40px; border-radius:9px; flex:none; background:linear-gradient(155deg,var(--highlight),#f2c559 60%, var(--red-pen)); display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-weight:700; color:var(--ink-dark); font-size:15px;}
+  .brand__title{color:#fbf9f2; font-size:1.35rem; font-weight:600;}
+  .brand__sub{color:#c9d8cf; font-family:var(--font-mono); font-size:0.72rem; letter-spacing:.06em; text-transform:uppercase;}
+  .topbar-actions{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+  .topbar-actions a, .topbar-actions button.link-btn{
+    font-family:var(--font-mono); font-size:0.76rem; color:#dfe9e3; background:transparent;
+    border:1px solid rgba(255,255,255,0.25); border-radius:99px; padding:7px 13px; text-decoration:none; cursor:pointer;
+  }
+  .topbar-actions a:hover, .topbar-actions button.link-btn:hover{background:rgba(255,255,255,0.12);}
+
+  .panel{background:var(--paper); border-radius:var(--radius); box-shadow:var(--shadow); padding:26px 28px; margin-bottom:22px;}
+  .panel h2{font-size:1.1rem; margin-bottom:4px;}
+  .panel p.desc{color:var(--pencil); font-size:0.86rem; margin:4px 0 18px;}
+
+  .field{margin-bottom:14px;}
+  .field label{display:block; font-size:0.8rem; font-weight:600; color:var(--pencil); margin-bottom:5px;}
+  input[type="text"], input[type="number"]{
+    width:100%; font-family:var(--font-body); font-size:0.92rem; color:var(--ink-dark);
+    background:#fff; border:1.5px solid #d8dccf; border-radius:var(--radius-sm); padding:9px 11px;
+  }
+  input[type="checkbox"]{margin-right:6px;}
+  .grid-3{display:grid; grid-template-columns:1.4fr 1fr 0.8fr; gap:14px 18px; align-items:end;}
+  @media (max-width:640px){ .grid-3{grid-template-columns:1fr;} }
+
+  button{font-family:var(--font-body); font-weight:600; font-size:0.88rem; cursor:pointer; border-radius:99px; border:1.5px solid transparent; padding:9px 16px;}
+  .btn--primary{background:var(--ink); color:#fff;}
+  .btn--primary:hover{background:var(--ink-dark);}
+  .btn--ghost{background:transparent; color:var(--ink); border-color:var(--ink);}
+  .btn--ghost:hover{background:rgba(30,58,138,0.08);}
+  .btn--pen{background:var(--red-pen); color:#fff;}
+  .btn--pen:hover{background:#8f2924;}
+  .btn--small{padding:6px 11px; font-size:0.76rem;}
+  button:disabled{opacity:0.45; cursor:not-allowed;}
+
+  table{width:100%; border-collapse:collapse; font-size:0.86rem;}
+  th, td{text-align:left; padding:10px 8px; border-bottom:1px solid #e4e1d4; vertical-align:middle;}
+  th{font-family:var(--font-mono); font-size:0.72rem; text-transform:uppercase; letter-spacing:.04em; color:var(--pencil-soft);}
+  td.credits{font-family:var(--font-mono); font-weight:600;}
+  .badge{font-family:var(--font-mono); font-size:0.7rem; padding:2px 8px; border-radius:99px; background:#eef2fb; color:var(--ink);}
+  .badge--warn{background:#fdf1ef; color:var(--red-pen);}
+  .row-actions{display:flex; gap:6px; flex-wrap:wrap; align-items:center;}
+  .row-actions input[type="number"]{width:64px; padding:6px 8px; font-family:var(--font-mono);}
+
+  .msg{font-family:var(--font-mono); font-size:0.78rem; border-radius:8px; padding:8px 12px; margin-bottom:14px; display:none;}
+  .msg.is-visible{display:block;}
+  .msg--error{background:#fdf1ef; color:var(--red-pen); border:1px solid #f2d6d3;}
+  .msg--ok{background:#eef7ef; color:#1e6b3a; border:1px solid #cfe8d4;}
+
+  .login-gate{position:fixed; inset:0; z-index:200; display:flex; align-items:center; justify-content:center; padding:20px;
+    background:radial-gradient(circle at 10% 0%, rgba(255,255,255,0.05), transparent 40%), linear-gradient(180deg,var(--cover) 0%,var(--cover-2) 100%);}
+  .login-card{width:100%; max-width:360px; background:var(--paper); border-radius:var(--radius); box-shadow:var(--shadow); padding:30px 26px;}
+  .login-card h1{font-size:1.2rem; margin-bottom:4px;}
+  .login-card p.login-sub{color:var(--pencil); font-size:0.85rem; margin:0 0 18px;}
+  .login-gate[hidden]{display:none;}
+  #appRoot[hidden]{display:none;}
+  .empty{color:var(--pencil-soft); font-size:0.86rem; padding:10px 0;}
+</style>
+</head>
+<body>
+
+<div class="login-gate" id="loginGate">
+  <form class="login-card" id="loginForm" autocomplete="off">
+    <h1>Painel admin</h1>
+    <p class="login-sub">Entre com uma conta de administrador do Caderno IA.</p>
+    <div class="msg msg--error" id="loginError"></div>
+    <div class="field">
+      <label for="loginUser">Usuário</label>
+      <input type="text" id="loginUser" name="username" autocomplete="username" required>
+    </div>
+    <div class="field">
+      <label for="loginPass">Senha</label>
+      <input type="text" id="loginPass" name="password" autocomplete="current-password" style="-webkit-text-security:disc; text-security:disc;" required>
+    </div>
+    <button type="submit" class="btn--primary" style="width:100%;" id="loginSubmitBtn">Entrar</button>
+  </form>
+</div>
+
+<div id="appRoot" hidden>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand__mark">Aa</div>
+      <div>
+        <div class="brand__title">Painel admin</div>
+        <div class="brand__sub">Membros &amp; créditos do Caderno IA</div>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <a href="/caderno-ia.html">Voltar ao Caderno IA</a>
+      <button type="button" class="link-btn" id="logoutBtn">Sair</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Novo usuário</h2>
+    <p class="desc">Crie um acesso para um novo membro do grupo. Compartilhe o usuário e a senha com ele por um canal seguro.</p>
+    <div class="msg msg--error" id="createError"></div>
+    <div class="msg msg--ok" id="createOk"></div>
+    <form id="createUserForm">
+      <div class="grid-3">
+        <div class="field">
+          <label for="newUsername">Usuário</label>
+          <input type="text" id="newUsername" required>
+        </div>
+        <div class="field">
+          <label for="newPassword">Senha</label>
+          <input type="text" id="newPassword" required>
+        </div>
+        <div class="field">
+          <label for="newCredits">Créditos iniciais</label>
+          <input type="number" id="newCredits" value="100" min="0" step="1" required>
+        </div>
+      </div>
+      <div class="field">
+        <label><input type="checkbox" id="newIsAdmin"> Esta conta também é administradora</label>
+      </div>
+      <button type="submit" class="btn--primary" id="createSubmitBtn">Criar usuário</button>
+    </form>
+  </div>
+
+  <div class="panel">
+    <h2>Membros</h2>
+    <p class="desc">Ajuste o saldo de créditos, libere o dispositivo vinculado ou remova um acesso.</p>
+    <div class="msg msg--error" id="listError"></div>
+    <table id="usersTable">
+      <thead>
+        <tr>
+          <th>Usuário</th>
+          <th>Créditos</th>
+          <th>Dispositivo</th>
+          <th>Ajustar créditos</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="usersTbody"></tbody>
+    </table>
+    <div class="empty" id="usersEmpty" style="display:none;">Nenhum usuário cadastrado ainda.</div>
+  </div>
+</div>
+</div>
+
+<script src="auth.js"></script>
+<script>
+(function(){
+  "use strict";
+  function $(id){ return document.getElementById(id); }
+
+  function showMsg(el, text, ok){
+    el.textContent = text;
+    el.classList.toggle('is-visible', !!text);
+    el.className = 'msg' + (ok ? ' msg--ok' : ' msg--error') + (text ? ' is-visible' : '');
+  }
+
+  function showLoginGate(message){
+    $('appRoot').hidden = true;
+    $('loginGate').hidden = false;
+    showMsg($('loginError'), message || '', false);
+  }
+
+  function showApp(){
+    $('loginGate').hidden = true;
+    $('appRoot').hidden = false;
+  }
+
+  $('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = $('loginSubmitBtn');
+    btn.disabled = true;
+    try {
+      const username = $('loginUser').value.trim();
+      const password = $('loginPass').value;
+      const user = await CadernoAuth.login(username, password);
+      if (!user.isAdmin){
+        await CadernoAuth.logout();
+        showLoginGate('Esta conta não tem acesso ao painel admin.');
+        return;
+      }
+      showApp();
+      loadUsers();
+    } catch (err){
+      showLoginGate(err.message || 'Não foi possível entrar.');
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  $('logoutBtn').addEventListener('click', async () => {
+    await CadernoAuth.logout();
+    showLoginGate();
+  });
+
+  async function loadUsers(){
+    showMsg($('listError'), '', false);
+    try {
+      const data = await CadernoAuth.apiFetch('/api/admin/users');
+      renderUsers(data.users);
+    } catch (err){
+      showMsg($('listError'), err.message || 'Não foi possível carregar os usuários.', false);
+    }
+  }
+
+  function renderUsers(users){
+    const tbody = $('usersTbody');
+    tbody.innerHTML = '';
+    $('usersEmpty').style.display = users.length ? 'none' : 'block';
+    users.forEach(u => {
+      const tr = document.createElement('tr');
+
+      const nameTd = document.createElement('td');
+      nameTd.textContent = u.username;
+      if (u.isAdmin){
+        const b = document.createElement('span');
+        b.className = 'badge';
+        b.textContent = 'admin';
+        b.style.marginLeft = '6px';
+        nameTd.appendChild(b);
+      }
+
+      const creditsTd = document.createElement('td');
+      creditsTd.className = 'credits';
+      creditsTd.textContent = u.credits;
+
+      const deviceTd = document.createElement('td');
+      const badge = document.createElement('span');
+      badge.className = 'badge' + (u.deviceBound ? '' : ' badge--warn');
+      badge.textContent = u.deviceBound ? 'vinculado' : 'livre';
+      deviceTd.appendChild(badge);
+      if (u.deviceBound){
+        const resetBtn = document.createElement('button');
+        resetBtn.className = 'btn--ghost btn--small';
+        resetBtn.textContent = 'Liberar';
+        resetBtn.style.marginLeft = '8px';
+        resetBtn.addEventListener('click', async () => {
+          resetBtn.disabled = true;
+          try {
+            await CadernoAuth.apiFetch(`/api/admin/users/${u.id}/reset-device`, { method: 'POST' });
+            await loadUsers();
+          } catch (err){
+            showMsg($('listError'), err.message || 'Falha ao liberar dispositivo.', false);
+            resetBtn.disabled = false;
+          }
+        });
+        deviceTd.appendChild(resetBtn);
+      }
+
+      const adjustTd = document.createElement('td');
+      const adjustWrap = document.createElement('div');
+      adjustWrap.className = 'row-actions';
+      const deltaInput = document.createElement('input');
+      deltaInput.type = 'number';
+      deltaInput.placeholder = '+/-';
+      deltaInput.step = '1';
+      const applyBtn = document.createElement('button');
+      applyBtn.className = 'btn--ghost btn--small';
+      applyBtn.textContent = 'Aplicar';
+      applyBtn.addEventListener('click', async () => {
+        const delta = parseInt(deltaInput.value, 10);
+        if (!Number.isFinite(delta) || delta === 0) return;
+        applyBtn.disabled = true;
+        try {
+          await CadernoAuth.apiFetch(`/api/admin/users/${u.id}/credits`, {
+            method: 'PATCH',
+            body: JSON.stringify({ delta })
+          });
+          deltaInput.value = '';
+          await loadUsers();
+        } catch (err){
+          showMsg($('listError'), err.message || 'Falha ao ajustar créditos.', false);
+        } finally {
+          applyBtn.disabled = false;
+        }
+      });
+      adjustWrap.appendChild(deltaInput);
+      adjustWrap.appendChild(applyBtn);
+      adjustTd.appendChild(adjustWrap);
+
+      const removeTd = document.createElement('td');
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'btn--pen btn--small';
+      removeBtn.textContent = 'Remover';
+      removeBtn.addEventListener('click', async () => {
+        if (!confirm(`Remover o acesso de "${u.username}"? Essa ação não pode ser desfeita.`)) return;
+        removeBtn.disabled = true;
+        try {
+          await CadernoAuth.apiFetch(`/api/admin/users/${u.id}`, { method: 'DELETE' });
+          await loadUsers();
+        } catch (err){
+          showMsg($('listError'), err.message || 'Falha ao remover usuário.', false);
+          removeBtn.disabled = false;
+        }
+      });
+      removeTd.appendChild(removeBtn);
+
+      tr.appendChild(nameTd);
+      tr.appendChild(creditsTd);
+      tr.appendChild(deviceTd);
+      tr.appendChild(adjustTd);
+      tr.appendChild(removeTd);
+      tbody.appendChild(tr);
+    });
+  }
+
+  $('createUserForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    showMsg($('createError'), '', false);
+    showMsg($('createOk'), '', true);
+    const btn = $('createSubmitBtn');
+    btn.disabled = true;
+    try {
+      const username = $('newUsername').value.trim();
+      const password = $('newPassword').value;
+      const credits = parseInt($('newCredits').value, 10) || 0;
+      const isAdmin = $('newIsAdmin').checked;
+      await CadernoAuth.apiFetch('/api/admin/users', {
+        method: 'POST',
+        body: JSON.stringify({ username, password, credits, isAdmin })
+      });
+      $('createUserForm').reset();
+      $('newCredits').value = 100;
+      showMsg($('createOk'), 'Usuário criado com sucesso.', true);
+      await loadUsers();
+    } catch (err){
+      showMsg($('createError'), err.message || 'Falha ao criar usuário.', false);
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  (async function bootstrapAuth(){
+    if (!CadernoAuth.getToken()){ showLoginGate(); return; }
+    try {
+      const user = await CadernoAuth.fetchMe();
+      if (!user.isAdmin){ showLoginGate('Esta conta não tem acesso ao painel admin.'); return; }
+      showApp();
+      loadUsers();
+    } catch (err){
+      showLoginGate();
+    }
+  })();
+})();
+</script>
+</body>
+</html>
