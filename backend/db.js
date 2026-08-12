@@ -25,4 +25,25 @@ export async function initDb() {
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     )
   `);
+
+  /* ---------------------------------------------------------------
+     Migração: colunas de configuração do caderno atribuídas pelo
+     admin a cada usuário (fonte, modelo de folha, margens e linhas).
+     SQLite/libSQL não suportam "ADD COLUMN IF NOT EXISTS", então cada
+     ALTER TABLE roda dentro de um try/catch — falha silenciosamente
+     quando a coluna já existe (banco já migrado antes).
+  --------------------------------------------------------------- */
+  const migrations = [
+    `ALTER TABLE users ADD COLUMN assigned_font_data TEXT`,
+    `ALTER TABLE users ADD COLUMN assigned_font_name TEXT`,
+    `ALTER TABLE users ADD COLUMN notebook_image_data TEXT`,
+    `ALTER TABLE users ADD COLUMN notebook_width INTEGER`,
+    `ALTER TABLE users ADD COLUMN notebook_height INTEGER`,
+    `ALTER TABLE users ADD COLUMN margin_left INTEGER NOT NULL DEFAULT 0`,
+    `ALTER TABLE users ADD COLUMN margin_right INTEGER NOT NULL DEFAULT 0`,
+    `ALTER TABLE users ADD COLUMN line_ys TEXT NOT NULL DEFAULT '[]'`
+  ];
+  for (const sql of migrations) {
+    try { await db.execute(sql); } catch (e) { /* coluna já existe — ignora */ }
+  }
 }

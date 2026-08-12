@@ -7,7 +7,9 @@ Backend simples em **Node.js + Express + SQLite (via libSQL)** que adiciona:
 - sistema de **créditos**: debita ao gerar resposta com IA (proporcional ao
   tamanho do texto) e ao exportar páginas do caderno (custo fixo por página);
 - **painel admin** (`/admin.html`) pra criar usuários, ajustar créditos,
-  liberar um dispositivo vinculado ou remover um acesso;
+  liberar um dispositivo vinculado, remover um acesso, e configurar o
+  **caderno de cada usuário** (fonte, modelo de folha, margens e linhas —
+  o usuário comum só ajusta tamanho da letra, cor e espaçamento);
 - proxy para a **API de IA**, com a chave guardada só no servidor — o
   navegador do usuário nunca vê a chave.
 
@@ -106,6 +108,24 @@ admin, com banco persistente e chave de IA protegida no servidor.
 
 ---
 
+## 4b. Configuração do caderno por usuário (fonte, folha, margens e linhas)
+
+O admin, no painel (`/admin.html`), escolhe um usuário e pode:
+
+- enviar a **fonte** dele (`.ttf`, `.otf`, `.woff`, `.woff2`);
+- enviar o **modelo de caderno** (foto/scan da folha em branco) — isso reseta
+  margens e linhas, já que a folha nova pode ter dimensões e pautas diferentes;
+- calibrar as **margens** e, linha por linha, cada **linha pautada**, do
+  mesmo jeito que era feito antes pelo próprio usuário.
+
+Tudo isso é salvo como base64 direto no banco (mesma lógica de persistência
+usada para o resto dos dados — funciona tanto com o SQLite local quanto com
+o Turso). O usuário logado busca essa configuração automaticamente ao entrar
+(`GET /api/me/config`) e só ajusta tamanho da letra, cor da tinta e
+espaçamento entre letras — ele nunca escolhe fonte nem modelo de caderno.
+
+---
+
 ## 4. Como funciona o vínculo de dispositivo
 
 No primeiro login de cada usuário, o navegador gera um identificador
@@ -143,6 +163,7 @@ O saldo de cada usuário é ajustado manualmente pelo admin no painel
 | POST | `/api/login` | público | login (usuário+senha+deviceId) |
 | POST | `/api/logout` | logado | encerra a sessão |
 | GET | `/api/me` | logado | dados do usuário logado |
+| GET | `/api/me/config` | logado | fonte/modelo/margens/linhas atribuídos pelo admin |
 | POST | `/api/ai/generate` | logado | gera resposta com IA e debita créditos |
 | POST | `/api/export/debit` | logado | debita créditos pela exportação de N páginas |
 | GET | `/api/admin/users` | admin | lista usuários e saldos |
@@ -150,3 +171,9 @@ O saldo de cada usuário é ajustado manualmente pelo admin no painel
 | PATCH | `/api/admin/users/:id/credits` | admin | ajusta créditos (`{ delta }`) |
 | POST | `/api/admin/users/:id/reset-device` | admin | libera o dispositivo vinculado |
 | DELETE | `/api/admin/users/:id` | admin | remove um usuário |
+| GET | `/api/admin/users/:id` | admin | dados + configuração de caderno do usuário |
+| POST | `/api/admin/users/:id/font` | admin | envia a fonte do usuário (`{ fontDataUrl, fontName }`) |
+| DELETE | `/api/admin/users/:id/font` | admin | remove a fonte atribuída |
+| POST | `/api/admin/users/:id/notebook` | admin | envia o modelo de folha (`{ imageDataUrl, width, height }`), reseta margens/linhas |
+| DELETE | `/api/admin/users/:id/notebook` | admin | remove o modelo de folha |
+| PATCH | `/api/admin/users/:id/layout` | admin | salva margens e linhas (`{ marginLeft, marginRight, lineYs }`) |

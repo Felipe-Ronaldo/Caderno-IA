@@ -17,7 +17,9 @@ const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
 
 const app = express();
 app.use(cors());
-app.use(express.json({ limit: '1mb' }));
+/* limite maior que o padrão porque o admin envia fontes (.ttf/.otf/.woff)
+   e imagens de modelo de caderno como base64 no corpo da requisição */
+app.use(express.json({ limit: '25mb' }));
 app.use(express.static(PUBLIC_DIR));
 
 function sha256hex(str) {
@@ -30,6 +32,31 @@ function toPublicUser(row) {
     username: row.username,
     isAdmin: !!row.is_admin,
     credits: row.credits
+  };
+}
+
+function parseLineYs(raw) {
+  try {
+    const arr = JSON.parse(raw || '[]');
+    return Array.isArray(arr) ? arr.filter(n => Number.isFinite(n)) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+/* Configuração de caderno atribuída pelo admin: fonte, modelo de folha,
+   margens e linhas. Enviada ao próprio usuário (para montar a página sem
+   precisar escolher nada disso) e ao admin (para editar). */
+function toNotebookConfig(row) {
+  return {
+    fontDataUrl: row.assigned_font_data || null,
+    fontName: row.assigned_font_name || null,
+    notebookImageDataUrl: row.notebook_image_data || null,
+    notebookWidth: row.notebook_width || null,
+    notebookHeight: row.notebook_height || null,
+    marginLeft: row.margin_left || 0,
+    marginRight: row.margin_right || 0,
+    lineYs: parseLineYs(row.line_ys)
   };
 }
 
@@ -111,6 +138,13 @@ app.post('/api/logout', requireAuth, async (req, res) => {
 
 app.get('/api/me', requireAuth, (req, res) => {
   res.json(toPublicUser(req.user));
+});
+
+/* Configuração de caderno atribuída pelo admin ao usuário logado: fonte,
+   modelo de folha, margens e linhas — o usuário não escolhe nada disso,
+   só usa o que foi enviado (e ajusta tamanho da letra, cor e espaçamento). */
+app.get('/api/me/config', requireAuth, (req, res) => {
+  res.json(toNotebookConfig(req.user));
 });
 
 /* =====================================================================
@@ -275,6 +309,105 @@ app.delete('/api/admin/users/:id', requireAuth, requireAdmin, async (req, res) =
     return res.status(400).json({ error: 'Você não pode remover sua própria conta.' });
   }
   await db.execute({ sql: 'DELETE FROM users WHERE id = ?', args: [id] });
+  res.json({ ok: true });
+});
+
+/* =====================================================================
+   PAINEL ADMIN — configuração do caderno por usuário
+   (fonte, modelo de folha, margens e linhas). O usuário comum só
+   configura tamanho da letra, cor e espaçamento — o resto é definido
+   aqui pelo admin, por conta.
+===================================================================== */
+async function getUserOr404(id, res) {
+  const result = await db.execute({ sql: 'SELECT * FROM users WHERE id = ?', args: [id] });
+  const row = result.rows[0];
+  if (!row) { res.status(404).json({ error: 'Usuário não encontrado.' }); return null; }
+  return row;
+}
+
+app.get('/api/admin/users/:id', requireAuth, requireAdmin, async (req, res) => {
+  const id = Number(req.params.id);
+  const row = await getUserOr404(id, res);
+  if (!row) return;
+  res.json({ user: toPublicUser(row), notebookConfig: toNotebookConfig(row) });
+});
+
+app.post('/api/admin/users/:id/font', requireAuth, requireAdmin, async (req, res) => {
+  const id = Number(req.params.id);
+  const { fontDataUrl, fontName } = req.body || {};
+  if (!fontDataUrl || !String(fontDataUrl).startsWith('data:')) {
+    return res.status(400).json({ error: 'Envie o arquivo de fonte (.ttf, .otf, .woff, .woff2).' });
+  }
+  const row = await getUserOr404(id, res);
+  if (!row) return;
+  await db.execute({
+    sql: 'UPDATE users SET assigned_font_data = ?, assigned_font_name = ? WHERE id = ?',
+    args: [String(fontDataUrl), String(fontName || 'fonte-personalizada'), id]
+  });
+  res.json({ ok: true });
+});
+
+app.delete('/api/admin/users/:id/font', requireAuth, requireAdmin, async (req, res) => {
+  const id = Number(req.params.id);
+  const row = await getUserOr404(id, res);
+  if (!row) return;
+  await db.execute({
+    sql: 'UPDATE users SET assigned_font_data = NULL, assigned_font_name = NULL WHERE id = ?',
+    args: [id]
+  });
+  res.json({ ok: true });
+});
+
+app.post('/api/admin/users/:id/notebook', requireAuth, requireAdmin, async (req, res) => {
+  const id = Number(req.params.id);
+  const { imageDataUrl, width, height } = req.body || {};
+  if (!imageDataUrl || !String(imageDataUrl).startsWith('data:image/')) {
+    return res.status(400).json({ error: 'Envie uma imagem (PNG ou JPG) para o modelo de caderno.' });
+  }
+  if (!Number.isInteger(width) || !Number.isInteger(height) || width < 1 || height < 1) {
+    return res.status(400).json({ error: 'Dimensões da imagem inválidas.' });
+  }
+  const row = await getUserOr404(id, res);
+  if (!row) return;
+  /* nova folha: reseta margens e linhas, já que a folha antiga pode ter
+     dimensões e pautas diferentes — o admin recalibra na sequência */
+  await db.execute({
+    sql: `UPDATE users SET notebook_image_data = ?, notebook_width = ?, notebook_height = ?,
+          margin_left = 0, margin_right = 0, line_ys = '[]' WHERE id = ?`,
+    args: [String(imageDataUrl), width, height, id]
+  });
+  res.json({ ok: true });
+});
+
+app.delete('/api/admin/users/:id/notebook', requireAuth, requireAdmin, async (req, res) => {
+  const id = Number(req.params.id);
+  const row = await getUserOr404(id, res);
+  if (!row) return;
+  await db.execute({
+    sql: `UPDATE users SET notebook_image_data = NULL, notebook_width = NULL, notebook_height = NULL,
+          margin_left = 0, margin_right = 0, line_ys = '[]' WHERE id = ?`,
+    args: [id]
+  });
+  res.json({ ok: true });
+});
+
+app.patch('/api/admin/users/:id/layout', requireAuth, requireAdmin, async (req, res) => {
+  const id = Number(req.params.id);
+  const marginLeft = Number(req.body?.marginLeft);
+  const marginRight = Number(req.body?.marginRight);
+  const lineYs = req.body?.lineYs;
+  if (!Number.isFinite(marginLeft) || !Number.isFinite(marginRight)) {
+    return res.status(400).json({ error: 'Margens inválidas.' });
+  }
+  if (!Array.isArray(lineYs) || !lineYs.every(n => Number.isFinite(n))) {
+    return res.status(400).json({ error: 'Lista de linhas inválida.' });
+  }
+  const row = await getUserOr404(id, res);
+  if (!row) return;
+  await db.execute({
+    sql: 'UPDATE users SET margin_left = ?, margin_right = ?, line_ys = ? WHERE id = ?',
+    args: [Math.max(0, Math.round(marginLeft)), Math.max(0, Math.round(marginRight)), JSON.stringify(lineYs), id]
+  });
   res.json({ ok: true });
 });
 
