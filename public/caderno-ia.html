@@ -192,63 +192,13 @@
   button:disabled{opacity:0.45; cursor:not-allowed; transform:none;}
   .btn-row{display:flex; gap:10px; flex-wrap:wrap; align-items:center;}
 
-  /* ---------- step 1 upload ---------- */
-  .dropzone{
-    border:2px dashed #b9c3ae; border-radius:var(--radius); padding:26px;
-    text-align:center; background:#fffefb; transition:border-color .15s, background .15s;
-    cursor:pointer;
-  }
-  .dropzone.is-drag{border-color:var(--ink); background:#eef2fb;}
-  .dropzone strong{display:block; color:var(--ink-dark); font-size:1rem; margin-bottom:4px;}
-  .dropzone span{color:var(--pencil-soft); font-size:0.84rem;}
-  .upload-preview{display:flex; gap:16px; align-items:flex-start; margin-top:16px; flex-wrap:wrap;}
-  .upload-preview img{max-width:220px; border-radius:8px; box-shadow:var(--shadow); border:1px solid #e4e1d4;}
-  .upload-meta{font-family:var(--font-mono); font-size:0.8rem; color:var(--pencil); background:#fff; border:1px solid #e4e1d4; border-radius:8px; padding:12px 14px;}
-  .upload-meta div{margin-bottom:4px;}
-
-  /* ---------- step 2 calibration ---------- */
+  /* ---------- aviso de caderno ainda não configurado pelo admin ---------- */
   .calib-placeholder{
     border:1.5px dashed #c7cabb; border-radius:var(--radius); padding:34px 20px; text-align:center;
-    color:var(--pencil-soft); font-size:0.9rem; background:#fffefb;
+    color:var(--pencil-soft); font-size:0.9rem; background:#fffefb; margin-bottom:18px;
   }
-  .calib-tools{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px;}
-  .calib-btn{
-    background:#fff; border:1.5px solid #d8dccf; color:var(--ink-dark);
-    border-radius:99px; padding:7px 13px; font-size:0.8rem; font-weight:600;
-  }
-  .calib-btn.is-active{background:var(--ink); border-color:var(--ink); color:#fff;}
-  .calib-hint{
-    font-family:var(--font-mono); font-size:0.78rem; color:var(--red-pen);
-    background:#fdf1ef; border:1px solid #f2d6d3; border-radius:8px; padding:8px 12px; margin-bottom:14px;
-  }
-  #calibCanvas{width:100%; height:auto; display:block; border-radius:8px; box-shadow:var(--shadow); cursor:crosshair; background:#eee;}
-  .calib-wrap{margin-bottom:20px;}
-  .checkbox-row{display:flex; align-items:center; gap:8px; margin:12px 0 18px;}
-  .checkbox-row input{width:16px; height:16px; accent-color:var(--ink);}
-  .checkbox-row label{margin:0; font-size:0.85rem; color:var(--pencil); font-weight:500;}
-  .readout{font-family:var(--font-mono); color:var(--ink); font-weight:600;}
 
-  /* ---------- lista de linhas calibradas (linha por linha) ---------- */
-  .line-list{
-    display:flex; flex-direction:column; gap:6px; max-height:260px; overflow-y:auto;
-    border:1.5px solid #e4e1d4; border-radius:var(--radius-sm); padding:8px; background:#fffefb; margin-bottom:12px;
-  }
-  .line-item{
-    display:flex; align-items:center; gap:8px; background:#fff; border:1px solid #e4e1d4; border-radius:8px; padding:6px 8px;
-  }
-  .line-item__num{font-family:var(--font-mono); font-size:0.74rem; color:var(--pencil-soft); width:44px; flex:none;}
-  .line-item__y{width:90px; flex:none; font-family:var(--font-mono);}
-  .line-item__remove{background:none; border:none; color:var(--pencil-soft); font-size:1rem; padding:2px 8px; border-radius:6px; flex:none;}
-  .line-item__remove:hover{color:var(--red-pen); background:#fbe4e2;}
-  .line-list-empty{color:var(--pencil-soft); font-size:0.84rem; padding:6px 4px;}
-  .add-line-row{display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:16px;}
-  .add-line-row input[type="number"]{width:110px; flex:none;}
-
-  /* ---------- upload de fonte personalizada ---------- */
-  .font-upload-row{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
-  .font-upload-name{font-family:var(--font-mono); font-size:0.78rem; color:var(--pencil); background:#fff; border:1px solid #e4e1d4; border-radius:8px; padding:6px 10px;}
-
-  /* ---------- step 3 style preview ---------- */
+  /* ---------- style preview ---------- */
   .style-preview{
     background:repeating-linear-gradient(#fff, #fff 27px, var(--paper-line) 28px);
     border:1px solid #d8dccf; border-radius:8px; padding:14px 18px; margin-bottom:18px;
@@ -339,11 +289,9 @@
       </div>
     </div>
     <nav class="steps-nav" aria-label="Etapas">
-      <a href="#step1">01 · Modelo</a>
-      <a href="#step2">02 · Margens</a>
-      <a href="#step3">03 · Estilo</a>
-      <a href="#step4">04 · Perguntas</a>
-      <a href="#step5">05 · Exportar</a>
+      <a href="#step3">01 · Estilo</a>
+      <a href="#step4">02 · Perguntas</a>
+      <a href="#step5">03 · Exportar</a>
     </nav>
     <div class="user-chip" id="userChip">
       <span class="user-chip__name" id="userChipName"></span>
@@ -355,113 +303,23 @@
 
   <div class="notebook">
 
-    <!-- ================= ETAPA 1 — UPLOAD ================= -->
-    <section class="step" id="step1">
-      <div class="step__head">
-        <span class="step__num">01</span>
-        <h2 class="step__title">Envie o modelo de caderno</h2>
-      </div>
-      <p class="step__desc">Envie a foto ou o scan de uma folha de caderno em branco. Ela será usada como fundo de todas as páginas geradas.</p>
-
-      <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Enviar imagem de fundo">
-        <strong>Arraste uma imagem aqui ou clique para escolher</strong>
-        <span>PNG ou JPG — de preferência a folha bem enquadrada e reta</span>
-        <input type="file" id="fileInput" accept="image/*" style="display:none">
-      </div>
-
-      <div class="upload-preview" id="uploadPreview" style="display:none;">
-        <img id="uploadImg" alt="Prévia da imagem de fundo enviada">
-        <div class="upload-meta" id="uploadMeta"></div>
-      </div>
-    </section>
-
-    <!-- ================= ETAPA 2 — MARGENS E LINHAS ================= -->
-    <section class="step" id="step2">
-      <div class="step__head">
-        <span class="step__num">02</span>
-        <h2 class="step__title">Defina as margens e as linhas</h2>
-      </div>
-      <p class="step__desc">Escolha uma ferramenta e clique na imagem para marcar as margens e cada linha pautada, uma por uma — assim você acerta o espaçamento exato de cada linha da sua folha, mesmo que elas não sejam perfeitamente regulares.</p>
-
-      <div class="calib-placeholder" id="calibPlaceholder">Envie uma imagem na etapa 01 para habilitar a calibração.</div>
-
-      <div class="calib-wrap" id="calibWrap" style="display:none;">
-        <div class="calib-tools">
-          <button type="button" class="calib-btn" data-calib="marginLeft">Margem esquerda</button>
-          <button type="button" class="calib-btn" data-calib="marginRight">Margem direita</button>
-          <button type="button" class="calib-btn" data-calib="addLine">Adicionar linha (clique na folha)</button>
-          <button type="button" class="calib-btn" data-calib="removeLine">Remover linha (clique perto dela)</button>
-        </div>
-        <div class="calib-hint" id="calibHint">Selecione uma ferramenta acima ou ajuste os valores manualmente abaixo.</div>
-        <canvas id="calibCanvas" tabindex="0"></canvas>
-
-        <div class="checkbox-row">
-          <input type="checkbox" id="showGuides" checked>
-          <label for="showGuides">Mostrar linhas calibradas na prévia</label>
-        </div>
-
-        <div class="grid-2">
-          <div class="field">
-            <label for="mgLeftNum">Margem esquerda (px)</label>
-            <div class="range-row">
-              <input type="range" id="mgLeftRange" min="0" max="400" value="0">
-              <input type="number" id="mgLeftNum" class="pair-num" min="0" max="4000" value="0">
-            </div>
-          </div>
-          <div class="field">
-            <label for="mgRightNum">Margem direita (px)</label>
-            <div class="range-row">
-              <input type="range" id="mgRightRange" min="0" max="400" value="0">
-              <input type="number" id="mgRightNum" class="pair-num" min="0" max="4000" value="0">
-            </div>
-          </div>
-        </div>
-
-        <div class="field">
-          <label>Linhas calibradas (uma por uma)</label>
-          <div class="hint" style="margin:0 0 10px;">Cada linha da lista é usada, na ordem, como o local exato onde uma linha de texto vai ser escrita. Ajuste a posição (px) de cada uma, remova as que não precisar, ou adicione novas manualmente abaixo.</div>
-          <div class="line-list" id="lineList"></div>
-          <div class="add-line-row">
-            <input type="number" id="newLineY" class="pair-num" min="0" placeholder="posição em px">
-            <button type="button" class="btn--ghost btn--small" id="addLineManualBtn">Adicionar linha nessa posição</button>
-            <button type="button" class="btn--ghost btn--small" id="autoGenerateLinesBtn">Gerar linhas automaticamente</button>
-            <button type="button" class="btn--ghost btn--small" id="clearLinesBtn">Limpar todas</button>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ================= ETAPA 3 — ESTILO ================= -->
+    <!-- ================= ETAPA 1 — ESTILO ================= -->
     <section class="step" id="step3">
       <div class="step__head">
-        <span class="step__num">03</span>
-        <h2 class="step__title">Escolha o estilo da escrita</h2>
+        <span class="step__num">01</span>
+        <h2 class="step__title">Escolha o tamanho, a cor e o espaçamento</h2>
       </div>
-      <p class="step__desc">Selecione a fonte, o tamanho e a cor da tinta. A prévia abaixo mostra como o texto ficará nas páginas geradas.</p>
+      <p class="step__desc">O modelo de caderno e a fonte já foram configurados pelo administrador para a sua conta. Aqui você só ajusta o tamanho da letra, a cor da tinta e o espaçamento. A prévia abaixo mostra como o texto ficará nas páginas geradas.</p>
+
+      <div class="calib-placeholder" id="notebookPendingNotice" style="display:none;">
+        Seu caderno ainda não foi configurado pelo administrador (modelo de folha, margens e linhas). Fale com ele antes de gerar páginas — assim que ele configurar, é só recarregar esta página.
+      </div>
 
       <div class="style-preview">
         <canvas id="stylePreviewCanvas" width="900" height="90"></canvas>
       </div>
 
       <div class="grid-3">
-        <div class="field">
-          <label for="fontFamily">Fonte</label>
-          <select id="fontFamily">
-            <option value="Caveat" selected>Caveat — natural</option>
-            <option value="Patrick Hand">Patrick Hand — letra de forma</option>
-            <option value="Shadows Into Light">Shadows Into Light — fina</option>
-            <option value="Indie Flower">Indie Flower — arredondada</option>
-            <option value="Homemade Apple">Homemade Apple — caneta grossa</option>
-            <option value="Gochi Hand">Gochi Hand — leve</option>
-            <option value="IBM Plex Sans">Sem estilo manuscrito — letra de forma</option>
-          </select>
-          <div class="hint">Prefere usar sua própria letra? Envie um arquivo de fonte abaixo.</div>
-          <div class="font-upload-row" style="margin-top:8px;">
-            <button type="button" class="btn--ghost btn--small" id="customFontBtn">Enviar minha fonte (.ttf, .otf, .woff)</button>
-            <input type="file" id="customFontInput" accept=".ttf,.otf,.woff,.woff2,font/ttf,font/otf,font/woff,font/woff2" style="display:none">
-            <span class="font-upload-name" id="customFontName" style="display:none;"></span>
-          </div>
-        </div>
         <div class="field">
           <label for="fontSizeNum">Tamanho da letra (px)</label>
           <div class="range-row">
@@ -516,7 +374,7 @@
     <!-- ================= ETAPA 4 — PERGUNTAS ================= -->
     <section class="step" id="step4">
       <div class="step__head">
-        <span class="step__num">04</span>
+        <span class="step__num">02</span>
         <h2 class="step__title">Adicione as perguntas</h2>
       </div>
       <p class="step__desc">Cole várias perguntas de uma vez (uma por linha) ou adicione uma de cada vez. Depois, gere as respostas com IA ou digite as suas.</p>
@@ -569,7 +427,7 @@
     <!-- ================= ETAPA 5 — GERAR E EXPORTAR ================= -->
     <section class="step" id="step5">
       <div class="step__head">
-        <span class="step__num">05</span>
+        <span class="step__num">03</span>
         <h2 class="step__title">Gere e exporte as páginas</h2>
       </div>
       <p class="step__desc">O texto é distribuído respeitando as linhas configuradas. Quando uma folha lota, uma nova página é criada automaticamente, continuando o conteúdo.</p>
@@ -613,7 +471,6 @@
     bgHeight: 0,
     margins: { left: 0, right: 0 },
     lineYs: [],
-    showGuides: true,
     fontFamily: 'Caveat',
     fontSize: 30,
     letterSpacing: 0,
@@ -624,8 +481,6 @@
     nextId: 1,
     pages: []
   };
-
-  const MAX_WORKING_WIDTH = 1800;
 
   /* =====================================================================
      UTILITÁRIOS
@@ -787,353 +642,70 @@
   }
 
   /* =====================================================================
-     ETAPA 1 — UPLOAD DA IMAGEM DE FUNDO
+     CONFIGURACAO DO CADERNO ATRIBUIDA PELO ADMIN
+     (modelo de folha, margens, linhas e fonte). O usuario nao escolhe
+     nada disso -- so ajusta tamanho da letra, cor e espacamento.
   ===================================================================== */
-  const dropzone = $('dropzone');
-  const fileInput = $('fileInput');
+  const ASSIGNED_FONT_FAMILY = 'CadernoAssignedFont';
 
-  dropzone.addEventListener('click', () => fileInput.click());
-  dropzone.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); fileInput.click(); } });
-  ['dragenter','dragover'].forEach(evt => dropzone.addEventListener(evt, e => { e.preventDefault(); dropzone.classList.add('is-drag'); }));
-  ['dragleave','drop'].forEach(evt => dropzone.addEventListener(evt, e => { e.preventDefault(); dropzone.classList.remove('is-drag'); }));
-  dropzone.addEventListener('drop', e => {
-    const file = e.dataTransfer.files && e.dataTransfer.files[0];
-    if (file) handleImageFile(file);
-  });
-  fileInput.addEventListener('change', e => {
-    const file = e.target.files[0];
-    if (file) handleImageFile(file);
-  });
-
-  function handleImageFile(file){
-    if (!file.type.startsWith('image/')){ showToast('Envie um arquivo de imagem (PNG ou JPG).'); return; }
-    const reader = new FileReader();
-    reader.onload = ev => {
+  function loadImageFromDataUrl(dataUrl){
+    return new Promise((resolve, reject) => {
       const img = new Image();
-      img.onload = () => {
-        let w = img.width, h = img.height;
-        if (w > MAX_WORKING_WIDTH){ h = Math.round(h * MAX_WORKING_WIDTH / w); w = MAX_WORKING_WIDTH; }
-        state.bgImage = img;
-        state.bgWidth = w;
-        state.bgHeight = h;
-        state.margins = {
-          left: Math.round(w * 0.13),
-          right: Math.round(w * 0.06)
-        };
-        state.lineYs = generateDefaultLines(h);
-
-        $('uploadImg').src = ev.target.result;
-        $('uploadMeta').innerHTML =
-          `<div>Arquivo: ${escapeHtml(file.name)}</div><div>Dimensões de trabalho: ${w} × ${h}px</div>`;
-        $('uploadPreview').style.display = 'flex';
-
-        $('calibPlaceholder').style.display = 'none';
-        $('calibWrap').style.display = 'block';
-        initCalibrationRanges();
-        renderLineList();
-        drawCalibration();
-        showToast('Imagem carregada! Agora calibre as margens e, linha por linha, as linhas de escrita.');
-      };
-      img.onerror = () => showToast('Não foi possível abrir essa imagem.');
-      img.src = ev.target.result;
-    };
-    reader.readAsDataURL(file);
-  }
-
-  function escapeHtml(str){
-    const d = document.createElement('div');
-    d.textContent = str;
-    return d.innerHTML;
-  }
-
-  /* Gera uma estimativa inicial de linhas igualmente espaçadas, apenas como
-     ponto de partida — o usuário depois ajusta cada linha individualmente. */
-  function generateDefaultLines(h){
-    const step = Math.max(14, Math.round(h * 0.045));
-    const offset = step;
-    const bottomLimit = h - Math.round(h * 0.05);
-    const out = [];
-    let y = offset;
-    while (y <= bottomLimit){
-      out.push(y);
-      y += step;
-    }
-    if (out.length === 0) out.push(offset);
-    return out;
-  }
-
-  /* =====================================================================
-     ETAPA 2 — MARGENS E CALIBRAÇÃO DE LINHAS
-  ===================================================================== */
-  let calibMode = null;
-
-  const pairs = [
-    { range:'mgLeftRange', num:'mgLeftNum', get:()=>state.margins.left, set:v=>state.margins.left=v },
-    { range:'mgRightRange', num:'mgRightNum', get:()=>state.margins.right, set:v=>state.margins.right=v }
-  ];
-
-  pairs.forEach(p => {
-    const rangeEl = $(p.range), numEl = $(p.num);
-    const apply = (val) => { p.set(Number(val)); rangeEl.value = val; numEl.value = val; drawCalibration(); };
-    rangeEl.addEventListener('input', () => apply(rangeEl.value));
-    numEl.addEventListener('input', () => apply(numEl.value));
-  });
-
-  function syncControlsFromState(){
-    pairs.forEach(p => {
-      $(p.range).value = p.get();
-      $(p.num).value = p.get();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error('Nao foi possivel carregar a imagem do caderno.'));
+      img.src = dataUrl;
     });
   }
 
-  function initCalibrationRanges(){
-    $('mgLeftRange').max = state.bgWidth;
-    $('mgLeftNum').max = state.bgWidth;
-    $('mgRightRange').max = state.bgWidth;
-    $('mgRightNum').max = state.bgWidth;
-    syncControlsFromState();
-  }
-
-  /* ---------- lista de linhas calibradas (linha por linha) ---------- */
-  function sortLines(){
-    state.lineYs = state.lineYs.slice().sort((a, b) => a - b);
-  }
-
-  function renderLineList(){
-    sortLines();
-    const container = $('lineList');
-    container.innerHTML = '';
-    if (state.lineYs.length === 0){
-      const empty = document.createElement('div');
-      empty.className = 'line-list-empty';
-      empty.textContent = 'Nenhuma linha calibrada ainda. Use "Adicionar linha" na imagem, ou adicione manualmente abaixo.';
-      container.appendChild(empty);
-      drawCalibration();
-      return;
-    }
-    state.lineYs.forEach((y, i) => {
-      const row = document.createElement('div');
-      row.className = 'line-item';
-
-      const num = document.createElement('span');
-      num.className = 'line-item__num';
-      num.textContent = `Linha ${i + 1}`;
-
-      const input = document.createElement('input');
-      input.type = 'number';
-      input.className = 'line-item__y';
-      input.min = '0';
-      input.max = String(state.bgHeight);
-      input.value = Math.round(y);
-      input.addEventListener('input', () => {
-        state.lineYs[i] = Number(input.value);
-        drawCalibration();
-      });
-      input.addEventListener('change', () => { renderLineList(); });
-
-      const removeBtn = document.createElement('button');
-      removeBtn.type = 'button';
-      removeBtn.className = 'line-item__remove';
-      removeBtn.setAttribute('aria-label', 'Remover esta linha');
-      removeBtn.textContent = '✕';
-      removeBtn.addEventListener('click', () => {
-        state.lineYs.splice(i, 1);
-        renderLineList();
-      });
-
-      row.appendChild(num);
-      row.appendChild(input);
-      row.appendChild(removeBtn);
-      container.appendChild(row);
-    });
-    drawCalibration();
-  }
-
-  $('addLineManualBtn').addEventListener('click', () => {
-    const val = Number($('newLineY').value);
-    if (!Number.isFinite(val) || val < 0){ showToast('Digite uma posição válida em px.'); return; }
-    state.lineYs.push(val);
-    $('newLineY').value = '';
-    renderLineList();
-  });
-
-  $('autoGenerateLinesBtn').addEventListener('click', () => {
-    if (!state.bgImage) return;
-    state.lineYs = generateDefaultLines(state.bgHeight);
-    renderLineList();
-    showToast('Linhas geradas automaticamente — ajuste cada uma se precisar.');
-  });
-
-  $('clearLinesBtn').addEventListener('click', () => {
-    if (state.lineYs.length === 0) return;
-    if (!confirm('Remover todas as linhas calibradas?')) return;
-    state.lineYs = [];
-    renderLineList();
-  });
-
-  $('showGuides').addEventListener('change', e => { state.showGuides = e.target.checked; drawCalibration(); });
-
-  document.querySelectorAll('.calib-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const mode = btn.getAttribute('data-calib');
-      calibMode = mode;
-      document.querySelectorAll('.calib-btn').forEach(b => b.classList.remove('is-active'));
-      btn.classList.add('is-active');
-      $('calibHint').textContent = calibHintText(mode);
-    });
-  });
-
-  function calibHintText(mode){
-    const map = {
-      marginLeft: 'Clique no ponto onde o texto deve começar (margem esquerda).',
-      marginRight: 'Clique no ponto onde o texto deve terminar (margem direita).',
-      addLine: 'Clique em cada linha pautada da folha para adicioná-la, uma por uma. Continue clicando para adicionar mais linhas; escolha outra ferramenta para parar.',
-      removeLine: 'Clique perto de uma linha já marcada para removê-la. Continue clicando para remover mais; escolha outra ferramenta para parar.'
-    };
-    return map[mode] || 'Selecione uma ferramenta acima ou ajuste os valores manualmente.';
-  }
-
-  function clearCalibActive(){
-    calibMode = null;
-    document.querySelectorAll('.calib-btn').forEach(b => b.classList.remove('is-active'));
-  }
-
-  const calibCanvas = $('calibCanvas');
-  calibCanvas.addEventListener('click', e => {
-    if (!calibMode || !state.bgImage) return;
-    applyCalibration(calibMode, canvasPointFromEvent(calibCanvas, e));
-  });
-
-  function applyCalibration(mode, pt){
-    switch(mode){
-      case 'marginLeft':
-        state.margins.left = Math.max(0, Math.round(pt.x));
-        clearCalibActive();
-        syncControlsFromState();
-        break;
-      case 'marginRight':
-        state.margins.right = Math.max(0, Math.round(state.bgWidth - pt.x));
-        clearCalibActive();
-        syncControlsFromState();
-        break;
-      case 'addLine':
-        state.lineYs.push(Math.round(pt.y));
-        renderLineList();
-        // mantém o modo ativo para permitir marcar várias linhas seguidas
-        break;
-      case 'removeLine': {
-        if (state.lineYs.length){
-          const threshold = Math.max(10, state.bgHeight * 0.012);
-          let nearestIdx = -1, nearestDist = Infinity;
-          state.lineYs.forEach((y, i) => {
-            const d = Math.abs(y - pt.y);
-            if (d < nearestDist){ nearestDist = d; nearestIdx = i; }
-          });
-          if (nearestIdx >= 0 && nearestDist <= threshold){
-            state.lineYs.splice(nearestIdx, 1);
-            renderLineList();
-          } else {
-            showToast('Nenhuma linha marcada perto desse ponto.');
-          }
-        }
-        // mantém o modo ativo para permitir remover várias linhas seguidas
-        break;
-      }
-    }
-    drawCalibration();
-  }
-
-  function drawCalibration(){
-    if (!state.bgImage) return;
-    calibCanvas.width = state.bgWidth;
-    calibCanvas.height = state.bgHeight;
-    const ctx = calibCanvas.getContext('2d');
-    ctx.drawImage(state.bgImage, 0, 0, calibCanvas.width, calibCanvas.height);
-
-    const { left, right } = state.margins;
-
-    // margens verticais (esquerda / direita)
-    ctx.save();
-    ctx.strokeStyle = 'rgba(181,52,47,0.85)';
-    ctx.lineWidth = Math.max(2, calibCanvas.width * 0.0016);
-    ctx.setLineDash([10, 7]);
-    ctx.beginPath(); ctx.moveTo(left, 0); ctx.lineTo(left, calibCanvas.height); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(calibCanvas.width - right, 0); ctx.lineTo(calibCanvas.width - right, calibCanvas.height); ctx.stroke();
-    ctx.restore();
-
-    // cada linha calibrada individualmente, numerada
-    if (state.showGuides){
-      const fontPx = Math.max(11, Math.round(calibCanvas.width * 0.014));
-      state.lineYs.forEach((y, i) => {
-        ctx.save();
-        ctx.strokeStyle = 'rgba(30,58,138,0.7)';
-        ctx.lineWidth = Math.max(1, calibCanvas.width * 0.0009);
-        ctx.setLineDash([]);
-        ctx.beginPath();
-        ctx.moveTo(left, y);
-        ctx.lineTo(calibCanvas.width - right, y);
-        ctx.stroke();
-
-        // marcador numerado no início da linha
-        const r = Math.max(8, fontPx * 0.65);
-        ctx.fillStyle = 'rgba(30,58,138,0.85)';
-        ctx.beginPath();
-        ctx.arc(left, y, r, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = '#fff';
-        ctx.font = `600 ${fontPx * 0.85}px "IBM Plex Mono", monospace`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(String(i + 1), left, y + 1);
-        ctx.restore();
-      });
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'alphabetic';
-    }
-  }
-
-  /* =====================================================================
-     ETAPA 3 — ESTILO DA ESCRITA
-  ===================================================================== */
-  $('fontFamily').addEventListener('change', e => { state.fontFamily = e.target.value; updateStylePreview(); });
-
-  /* ---------- fonte personalizada enviada pelo usuário ---------- */
-  $('customFontBtn').addEventListener('click', () => $('customFontInput').click());
-
-  function sanitizeFontFamilyName(filename){
-    const base = String(filename || 'fonte').replace(/\.[^.]+$/, '');
-    const cleaned = base.replace(/[^a-zA-Z0-9]+/g, '') || 'Fonte';
-    return 'Custom' + cleaned + Date.now();
-  }
-
-  $('customFontInput').addEventListener('change', async e => {
-    const file = e.target.files[0];
-    if (!file) return;
+  async function loadNotebookConfig(){
+    let cfg;
     try {
-      const buffer = await file.arrayBuffer();
-      const familyName = sanitizeFontFamilyName(file.name);
-      const fontFace = new FontFace(familyName, buffer);
-      await fontFace.load();
-      document.fonts.add(fontFace);
-
-      const select = $('fontFamily');
-      const opt = document.createElement('option');
-      opt.value = familyName;
-      opt.textContent = `Sua fonte — ${file.name}`;
-      select.appendChild(opt);
-      select.value = familyName;
-
-      state.fontFamily = familyName;
-      $('customFontName').textContent = file.name;
-      $('customFontName').style.display = 'inline-block';
-      await updateStylePreview();
-      showToast('Fonte carregada e selecionada!');
+      cfg = await CadernoAuth.apiFetch('/api/me/config');
     } catch (err){
       console.error(err);
-      showToast('Não foi possível carregar essa fonte. Verifique se o arquivo é .ttf, .otf, .woff ou .woff2.');
+      return;
     }
-  });
 
+    if (cfg.notebookImageDataUrl){
+      try {
+        const img = await loadImageFromDataUrl(cfg.notebookImageDataUrl);
+        state.bgImage = img;
+        state.bgWidth = cfg.notebookWidth || img.naturalWidth;
+        state.bgHeight = cfg.notebookHeight || img.naturalHeight;
+        state.margins = { left: cfg.marginLeft || 0, right: cfg.marginRight || 0 };
+        state.lineYs = Array.isArray(cfg.lineYs) ? cfg.lineYs.slice() : [];
+      } catch (err){
+        console.error(err);
+        showToast('Nao foi possivel carregar o modelo de caderno enviado pelo administrador.');
+      }
+    }
+
+    if (cfg.fontDataUrl){
+      try {
+        const fontFace = new FontFace(ASSIGNED_FONT_FAMILY, `url(${cfg.fontDataUrl})`);
+        await fontFace.load();
+        document.fonts.add(fontFace);
+        state.fontFamily = ASSIGNED_FONT_FAMILY;
+      } catch (err){
+        console.error(err);
+        state.fontFamily = 'Caveat';
+      }
+    } else {
+      state.fontFamily = 'Caveat';
+    }
+
+    const pending = !state.bgImage || !state.lineYs.length;
+    $('notebookPendingNotice').style.display = pending ? 'block' : 'none';
+
+    await updateStylePreview();
+  }
+
+
+  /* =====================================================================
+     ESTILO DA ESCRITA — tamanho, espaçamento e cores (o único ajuste que
+     o usuário faz; fonte e modelo de caderno vêm do admin, ver
+     loadNotebookConfig acima).
+  ===================================================================== */
   ['fontSizeRange','fontSizeNum'].forEach(id => {
     $(id).addEventListener('input', () => {
       const v = Number($(id).value);
@@ -1377,8 +949,11 @@
   $('generatePagesBtn').addEventListener('click', generatePages);
 
   async function generatePages(){
-    if (!state.bgImage){ showToast('Envie uma imagem de fundo na etapa 01.'); document.getElementById('step1').scrollIntoView({behavior:'smooth'}); return; }
-    if (!state.lineYs || state.lineYs.length === 0){ showToast('Calibre pelo menos uma linha na etapa 02.'); document.getElementById('step2').scrollIntoView({behavior:'smooth'}); return; }
+    if (!state.bgImage || !state.lineYs || state.lineYs.length === 0){
+      showToast('Seu caderno ainda não foi configurado pelo administrador. Fale com ele antes de gerar páginas.');
+      document.getElementById('step3').scrollIntoView({behavior:'smooth'});
+      return;
+    }
     const validQs = state.questions.filter(q => q.question.trim());
     if (validQs.length === 0){ showToast('Adicione pelo menos uma pergunta na etapa 04.'); document.getElementById('step4').scrollIntoView({behavior:'smooth'}); return; }
 
@@ -1571,6 +1146,7 @@
     $('userChipName').textContent = user.username;
     updateCreditsChip(user.credits);
     $('userChipAdminLink').style.display = user.isAdmin ? '' : 'none';
+    loadNotebookConfig();
   }
 
   function showLoginGate(message){

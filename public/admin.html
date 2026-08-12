@@ -43,13 +43,54 @@
 
   .field{margin-bottom:14px;}
   .field label{display:block; font-size:0.8rem; font-weight:600; color:var(--pencil); margin-bottom:5px;}
-  input[type="text"], input[type="number"]{
+  .field .hint{font-size:0.78rem; color:var(--pencil-soft); margin-top:4px;}
+  input[type="text"], input[type="number"], select{
     width:100%; font-family:var(--font-body); font-size:0.92rem; color:var(--ink-dark);
     background:#fff; border:1.5px solid #d8dccf; border-radius:var(--radius-sm); padding:9px 11px;
   }
   input[type="checkbox"]{margin-right:6px;}
+  .grid-2{display:grid; grid-template-columns:1fr 1fr; gap:14px 18px;}
   .grid-3{display:grid; grid-template-columns:1.4fr 1fr 0.8fr; gap:14px 18px; align-items:end;}
-  @media (max-width:640px){ .grid-3{grid-template-columns:1fr;} }
+  @media (max-width:640px){ .grid-3, .grid-2{grid-template-columns:1fr;} }
+  .range-row{display:flex; align-items:center; gap:10px;}
+  input[type="range"]{flex:1; accent-color:var(--ink);}
+  input[type="number"].pair-num{width:82px; flex:none; font-family:var(--font-mono);}
+
+  /* ---------- config de caderno por usuário ---------- */
+  .cfg-disabled{opacity:0.45; pointer-events:none; user-select:none;}
+  .dropzone{
+    border:2px dashed #b9c3ae; border-radius:var(--radius-sm); padding:22px;
+    text-align:center; background:#fffefb; cursor:pointer;
+  }
+  .dropzone.is-drag{border-color:var(--ink); background:#eef2fb;}
+  .dropzone strong{display:block; color:var(--ink-dark); font-size:0.95rem; margin-bottom:4px;}
+  .dropzone span{color:var(--pencil-soft); font-size:0.82rem;}
+  .font-upload-row, .notebook-upload-row{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:6px;}
+  .font-upload-name{font-family:var(--font-mono); font-size:0.78rem; color:var(--pencil); background:#fff; border:1px solid #e4e1d4; border-radius:8px; padding:6px 10px;}
+  .calib-tools{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px;}
+  .calib-btn{
+    background:#fff; border:1.5px solid #d8dccf; color:var(--ink-dark);
+    border-radius:99px; padding:7px 13px; font-size:0.8rem; font-weight:600; cursor:pointer;
+  }
+  .calib-btn.is-active{background:var(--ink); border-color:var(--ink); color:#fff;}
+  .calib-hint{
+    font-family:var(--font-mono); font-size:0.78rem; color:var(--red-pen);
+    background:#fdf1ef; border:1px solid #f2d6d3; border-radius:8px; padding:8px 12px; margin-bottom:14px;
+  }
+  #adminCalibCanvas{width:100%; height:auto; display:block; border-radius:8px; box-shadow:var(--shadow); cursor:crosshair; background:#eee;}
+  .calib-wrap{margin-top:16px;}
+  .line-list{
+    display:flex; flex-direction:column; gap:6px; max-height:220px; overflow-y:auto;
+    border:1.5px solid #e4e1d4; border-radius:var(--radius-sm); padding:8px; background:#fffefb; margin-bottom:12px;
+  }
+  .line-item{display:flex; align-items:center; gap:8px; background:#fff; border:1px solid #e4e1d4; border-radius:8px; padding:6px 8px;}
+  .line-item__num{font-family:var(--font-mono); font-size:0.74rem; color:var(--pencil-soft); width:44px; flex:none;}
+  .line-item__y{width:90px; flex:none; font-family:var(--font-mono);}
+  .line-item__remove{background:none; border:none; color:var(--pencil-soft); font-size:1rem; padding:2px 8px; border-radius:6px; flex:none; cursor:pointer;}
+  .line-item__remove:hover{color:var(--red-pen); background:#fbe4e2;}
+  .line-list-empty{color:var(--pencil-soft); font-size:0.84rem; padding:6px 4px;}
+  .add-line-row{display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:16px;}
+  .add-line-row input[type="number"]{width:110px; flex:none;}
 
   button{font-family:var(--font-body); font-weight:600; font-size:0.88rem; cursor:pointer; border-radius:99px; border:1.5px solid transparent; padding:9px 16px;}
   .btn--primary{background:var(--ink); color:#fff;}
@@ -148,6 +189,90 @@
   </div>
 
   <div class="panel">
+    <h2>Caderno de cada usuário</h2>
+    <p class="desc">Envie a fonte e o modelo de folha de cada usuário, e calibre as margens e as linhas. O usuário não escolhe nada disso — só ajusta tamanho da letra, cor e espaçamento.</p>
+    <div class="msg msg--error" id="cfgError"></div>
+    <div class="msg msg--ok" id="cfgOk"></div>
+
+    <div class="field">
+      <label for="cfgUserSelect">Usuário</label>
+      <select id="cfgUserSelect">
+        <option value="">Selecione um usuário…</option>
+      </select>
+    </div>
+
+    <div id="cfgBody" class="cfg-disabled">
+      <div class="grid-2">
+        <div class="field">
+          <label>Fonte do usuário</label>
+          <div class="font-upload-row">
+            <button type="button" class="btn--ghost btn--small" id="cfgFontBtn">Enviar fonte (.ttf, .otf, .woff)</button>
+            <input type="file" id="cfgFontInput" accept=".ttf,.otf,.woff,.woff2,font/ttf,font/otf,font/woff,font/woff2" style="display:none">
+            <button type="button" class="btn--pen btn--small" id="cfgFontRemoveBtn" style="display:none;">Remover fonte</button>
+          </div>
+          <div class="font-upload-name" id="cfgFontName" style="margin-top:8px; display:none;"></div>
+        </div>
+        <div class="field">
+          <label>Modelo de caderno (folha em branco)</label>
+          <div class="dropzone" id="cfgDropzone" tabindex="0" role="button" aria-label="Enviar imagem do modelo de caderno">
+            <strong>Arraste uma imagem aqui ou clique para escolher</strong>
+            <span>PNG ou JPG — substitui o modelo atual e reseta margens/linhas</span>
+            <input type="file" id="cfgNotebookInput" accept="image/*" style="display:none">
+          </div>
+          <div class="notebook-upload-row" id="cfgNotebookMeta" style="display:none;">
+            <button type="button" class="btn--pen btn--small" id="cfgNotebookRemoveBtn">Remover modelo</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="calib-wrap" id="cfgCalibWrap" style="display:none;">
+        <div class="field">
+          <label>Margens e linhas</label>
+          <div class="hint" style="margin:0 0 10px;">Escolha uma ferramenta e clique na imagem para marcar as margens e cada linha pautada, uma por uma.</div>
+        </div>
+        <div class="calib-tools">
+          <button type="button" class="calib-btn" data-calib="marginLeft">Margem esquerda</button>
+          <button type="button" class="calib-btn" data-calib="marginRight">Margem direita</button>
+          <button type="button" class="calib-btn" data-calib="addLine">Adicionar linha (clique na folha)</button>
+          <button type="button" class="calib-btn" data-calib="removeLine">Remover linha (clique perto dela)</button>
+        </div>
+        <div class="calib-hint" id="cfgCalibHint">Selecione uma ferramenta acima ou ajuste os valores manualmente abaixo.</div>
+        <canvas id="adminCalibCanvas" tabindex="0"></canvas>
+
+        <div class="grid-2" style="margin-top:14px;">
+          <div class="field">
+            <label for="cfgMgLeftNum">Margem esquerda (px)</label>
+            <div class="range-row">
+              <input type="range" id="cfgMgLeftRange" min="0" max="400" value="0">
+              <input type="number" id="cfgMgLeftNum" class="pair-num" min="0" max="4000" value="0">
+            </div>
+          </div>
+          <div class="field">
+            <label for="cfgMgRightNum">Margem direita (px)</label>
+            <div class="range-row">
+              <input type="range" id="cfgMgRightRange" min="0" max="400" value="0">
+              <input type="number" id="cfgMgRightNum" class="pair-num" min="0" max="4000" value="0">
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Linhas calibradas (uma por uma)</label>
+          <div class="line-list" id="cfgLineList"></div>
+          <div class="add-line-row">
+            <input type="number" id="cfgNewLineY" class="pair-num" min="0" placeholder="posição em px">
+            <button type="button" class="btn--ghost btn--small" id="cfgAddLineManualBtn">Adicionar linha nessa posição</button>
+            <button type="button" class="btn--ghost btn--small" id="cfgAutoGenerateLinesBtn">Gerar linhas automaticamente</button>
+            <button type="button" class="btn--ghost btn--small" id="cfgClearLinesBtn">Limpar todas</button>
+          </div>
+        </div>
+
+        <button type="button" class="btn--primary" id="cfgSaveLayoutBtn">Salvar margens e linhas</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
     <h2>Membros</h2>
     <p class="desc">Ajuste o saldo de créditos, libere o dispositivo vinculado ou remova um acesso.</p>
     <div class="msg msg--error" id="listError"></div>
@@ -223,6 +348,7 @@
     try {
       const data = await CadernoAuth.apiFetch('/api/admin/users');
       renderUsers(data.users);
+      populateCfgUserSelect(data.users);
     } catch (err){
       showMsg($('listError'), err.message || 'Não foi possível carregar os usuários.', false);
     }
@@ -350,6 +476,415 @@
       await loadUsers();
     } catch (err){
       showMsg($('createError'), err.message || 'Falha ao criar usuário.', false);
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  /* =====================================================================
+     CADERNO POR USUÁRIO — fonte, modelo de folha, margens e linhas
+  ===================================================================== */
+  const MAX_WORKING_WIDTH = 1800;
+  let cfgSelectedUserId = null;
+  let cfgCalibMode = null;
+  const adminCalib = { bgImage: null, bgWidth: 0, bgHeight: 0, margins: { left: 0, right: 0 }, lineYs: [] };
+
+  function populateCfgUserSelect(users){
+    const select = $('cfgUserSelect');
+    const prevValue = select.value;
+    select.innerHTML = '<option value="">Selecione um usuário…</option>';
+    users.forEach(u => {
+      const opt = document.createElement('option');
+      opt.value = String(u.id);
+      opt.textContent = u.username;
+      select.appendChild(opt);
+    });
+    if (prevValue && users.some(u => String(u.id) === prevValue)){
+      select.value = prevValue;
+    } else {
+      cfgSelectedUserId = null;
+      $('cfgBody').classList.add('cfg-disabled');
+    }
+  }
+
+  function readFileAsDataUrl(file){
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error('Não foi possível ler o arquivo.'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function loadImageFromDataUrl(dataUrl){
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error('Não foi possível abrir essa imagem.'));
+      img.src = dataUrl;
+    });
+  }
+
+  function generateDefaultLines(h){
+    const step = Math.max(14, Math.round(h * 0.045));
+    const offset = step;
+    const bottomLimit = h - Math.round(h * 0.05);
+    const out = [];
+    let y = offset;
+    while (y <= bottomLimit){ out.push(y); y += step; }
+    if (out.length === 0) out.push(offset);
+    return out;
+  }
+
+  $('cfgUserSelect').addEventListener('change', () => {
+    const val = $('cfgUserSelect').value;
+    if (!val){
+      cfgSelectedUserId = null;
+      $('cfgBody').classList.add('cfg-disabled');
+      return;
+    }
+    cfgSelectedUserId = Number(val);
+    $('cfgBody').classList.remove('cfg-disabled');
+    loadCfgForSelectedUser();
+  });
+
+  async function loadCfgForSelectedUser(){
+    showMsg($('cfgError'), '', false);
+    showMsg($('cfgOk'), '', true);
+    if (!cfgSelectedUserId) return;
+    try {
+      const data = await CadernoAuth.apiFetch(`/api/admin/users/${cfgSelectedUserId}`);
+      const cfg = data.notebookConfig;
+
+      if (cfg.fontName){
+        $('cfgFontName').textContent = 'Fonte atual: ' + cfg.fontName;
+        $('cfgFontName').style.display = 'block';
+        $('cfgFontRemoveBtn').style.display = '';
+      } else {
+        $('cfgFontName').style.display = 'none';
+        $('cfgFontRemoveBtn').style.display = 'none';
+      }
+
+      if (cfg.notebookImageDataUrl){
+        $('cfgNotebookMeta').style.display = 'flex';
+        const img = await loadImageFromDataUrl(cfg.notebookImageDataUrl);
+        adminCalib.bgImage = img;
+        adminCalib.bgWidth = cfg.notebookWidth || img.naturalWidth;
+        adminCalib.bgHeight = cfg.notebookHeight || img.naturalHeight;
+        adminCalib.margins = { left: cfg.marginLeft || 0, right: cfg.marginRight || 0 };
+        adminCalib.lineYs = Array.isArray(cfg.lineYs) ? cfg.lineYs.slice() : [];
+        $('cfgCalibWrap').style.display = 'block';
+        initCfgCalibRanges();
+        renderCfgLineList();
+      } else {
+        adminCalib.bgImage = null;
+        $('cfgNotebookMeta').style.display = 'none';
+        $('cfgCalibWrap').style.display = 'none';
+      }
+    } catch (err){
+      showMsg($('cfgError'), err.message || 'Não foi possível carregar a configuração desse usuário.', false);
+    }
+  }
+
+  /* ---------- fonte ---------- */
+  $('cfgFontBtn').addEventListener('click', () => $('cfgFontInput').click());
+  $('cfgFontInput').addEventListener('change', async e => {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file || !cfgSelectedUserId) return;
+    try {
+      const dataUrl = await readFileAsDataUrl(file);
+      await CadernoAuth.apiFetch(`/api/admin/users/${cfgSelectedUserId}/font`, {
+        method: 'POST',
+        body: JSON.stringify({ fontDataUrl: dataUrl, fontName: file.name })
+      });
+      showMsg($('cfgOk'), 'Fonte enviada com sucesso.', true);
+      await loadCfgForSelectedUser();
+    } catch (err){
+      showMsg($('cfgError'), err.message || 'Falha ao enviar a fonte.', false);
+    }
+  });
+
+  $('cfgFontRemoveBtn').addEventListener('click', async () => {
+    if (!cfgSelectedUserId) return;
+    if (!confirm('Remover a fonte desse usuário? Ele volta para a fonte padrão.')) return;
+    try {
+      await CadernoAuth.apiFetch(`/api/admin/users/${cfgSelectedUserId}/font`, { method: 'DELETE' });
+      showMsg($('cfgOk'), 'Fonte removida.', true);
+      await loadCfgForSelectedUser();
+    } catch (err){
+      showMsg($('cfgError'), err.message || 'Falha ao remover a fonte.', false);
+    }
+  });
+
+  /* ---------- modelo de caderno ---------- */
+  const cfgDropzone = $('cfgDropzone');
+  const cfgNotebookInput = $('cfgNotebookInput');
+  cfgDropzone.addEventListener('click', () => cfgNotebookInput.click());
+  cfgDropzone.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); cfgNotebookInput.click(); } });
+  ['dragenter','dragover'].forEach(evt => cfgDropzone.addEventListener(evt, e => { e.preventDefault(); cfgDropzone.classList.add('is-drag'); }));
+  ['dragleave','drop'].forEach(evt => cfgDropzone.addEventListener(evt, e => { e.preventDefault(); cfgDropzone.classList.remove('is-drag'); }));
+  cfgDropzone.addEventListener('drop', e => {
+    const file = e.dataTransfer.files && e.dataTransfer.files[0];
+    if (file) handleCfgNotebookFile(file);
+  });
+  cfgNotebookInput.addEventListener('change', e => {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (file) handleCfgNotebookFile(file);
+  });
+
+  async function handleCfgNotebookFile(file){
+    if (!cfgSelectedUserId) return;
+    if (!file.type.startsWith('image/')){ showMsg($('cfgError'), 'Envie um arquivo de imagem (PNG ou JPG).', false); return; }
+    try {
+      const dataUrl = await readFileAsDataUrl(file);
+      const img = await loadImageFromDataUrl(dataUrl);
+      let w = img.naturalWidth, h = img.naturalHeight;
+      if (w > MAX_WORKING_WIDTH){ h = Math.round(h * MAX_WORKING_WIDTH / w); w = MAX_WORKING_WIDTH; }
+      await CadernoAuth.apiFetch(`/api/admin/users/${cfgSelectedUserId}/notebook`, {
+        method: 'POST',
+        body: JSON.stringify({ imageDataUrl: dataUrl, width: w, height: h })
+      });
+      showMsg($('cfgOk'), 'Modelo de caderno enviado. Calibre as margens e as linhas abaixo.', true);
+      await loadCfgForSelectedUser();
+    } catch (err){
+      showMsg($('cfgError'), err.message || 'Falha ao enviar o modelo de caderno.', false);
+    }
+  }
+
+  $('cfgNotebookRemoveBtn').addEventListener('click', async () => {
+    if (!cfgSelectedUserId) return;
+    if (!confirm('Remover o modelo de caderno desse usuário? Margens e linhas também serão apagadas.')) return;
+    try {
+      await CadernoAuth.apiFetch(`/api/admin/users/${cfgSelectedUserId}/notebook`, { method: 'DELETE' });
+      showMsg($('cfgOk'), 'Modelo de caderno removido.', true);
+      await loadCfgForSelectedUser();
+    } catch (err){
+      showMsg($('cfgError'), err.message || 'Falha ao remover o modelo de caderno.', false);
+    }
+  });
+
+  /* ---------- calibração de margens e linhas ---------- */
+  const cfgPairs = [
+    { range:'cfgMgLeftRange', num:'cfgMgLeftNum', get:()=>adminCalib.margins.left, set:v=>adminCalib.margins.left=v },
+    { range:'cfgMgRightRange', num:'cfgMgRightNum', get:()=>adminCalib.margins.right, set:v=>adminCalib.margins.right=v }
+  ];
+  cfgPairs.forEach(p => {
+    const rangeEl = $(p.range), numEl = $(p.num);
+    const apply = (val) => { p.set(Number(val)); rangeEl.value = val; numEl.value = val; drawAdminCalibration(); };
+    rangeEl.addEventListener('input', () => apply(rangeEl.value));
+    numEl.addEventListener('input', () => apply(numEl.value));
+  });
+
+  function syncCfgControlsFromState(){
+    cfgPairs.forEach(p => { $(p.range).value = p.get(); $(p.num).value = p.get(); });
+  }
+
+  function initCfgCalibRanges(){
+    $('cfgMgLeftRange').max = adminCalib.bgWidth;
+    $('cfgMgLeftNum').max = adminCalib.bgWidth;
+    $('cfgMgRightRange').max = adminCalib.bgWidth;
+    $('cfgMgRightNum').max = adminCalib.bgWidth;
+    syncCfgControlsFromState();
+  }
+
+  function sortAdminLines(){ adminCalib.lineYs = adminCalib.lineYs.slice().sort((a,b) => a - b); }
+
+  function renderCfgLineList(){
+    sortAdminLines();
+    const container = $('cfgLineList');
+    container.innerHTML = '';
+    if (adminCalib.lineYs.length === 0){
+      const empty = document.createElement('div');
+      empty.className = 'line-list-empty';
+      empty.textContent = 'Nenhuma linha calibrada ainda.';
+      container.appendChild(empty);
+      drawAdminCalibration();
+      return;
+    }
+    adminCalib.lineYs.forEach((y, i) => {
+      const row = document.createElement('div');
+      row.className = 'line-item';
+      const num = document.createElement('span');
+      num.className = 'line-item__num';
+      num.textContent = `Linha ${i + 1}`;
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.className = 'line-item__y';
+      input.min = '0';
+      input.max = String(adminCalib.bgHeight);
+      input.value = Math.round(y);
+      input.addEventListener('input', () => { adminCalib.lineYs[i] = Number(input.value); drawAdminCalibration(); });
+      input.addEventListener('change', () => renderCfgLineList());
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'line-item__remove';
+      removeBtn.setAttribute('aria-label', 'Remover esta linha');
+      removeBtn.textContent = '✕';
+      removeBtn.addEventListener('click', () => { adminCalib.lineYs.splice(i, 1); renderCfgLineList(); });
+      row.appendChild(num);
+      row.appendChild(input);
+      row.appendChild(removeBtn);
+      container.appendChild(row);
+    });
+    drawAdminCalibration();
+  }
+
+  $('cfgAddLineManualBtn').addEventListener('click', () => {
+    const val = Number($('cfgNewLineY').value);
+    if (!Number.isFinite(val) || val < 0) return;
+    adminCalib.lineYs.push(val);
+    $('cfgNewLineY').value = '';
+    renderCfgLineList();
+  });
+
+  $('cfgAutoGenerateLinesBtn').addEventListener('click', () => {
+    if (!adminCalib.bgImage) return;
+    adminCalib.lineYs = generateDefaultLines(adminCalib.bgHeight);
+    renderCfgLineList();
+  });
+
+  $('cfgClearLinesBtn').addEventListener('click', () => {
+    if (adminCalib.lineYs.length === 0) return;
+    if (!confirm('Remover todas as linhas calibradas?')) return;
+    adminCalib.lineYs = [];
+    renderCfgLineList();
+  });
+
+  document.querySelectorAll('#cfgCalibWrap .calib-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      cfgCalibMode = btn.getAttribute('data-calib');
+      document.querySelectorAll('#cfgCalibWrap .calib-btn').forEach(b => b.classList.remove('is-active'));
+      btn.classList.add('is-active');
+      $('cfgCalibHint').textContent = cfgCalibHintText(cfgCalibMode);
+    });
+  });
+
+  function cfgCalibHintText(mode){
+    const map = {
+      marginLeft: 'Clique no ponto onde o texto deve começar (margem esquerda).',
+      marginRight: 'Clique no ponto onde o texto deve terminar (margem direita).',
+      addLine: 'Clique em cada linha pautada da folha para adicioná-la, uma por uma.',
+      removeLine: 'Clique perto de uma linha já marcada para removê-la.'
+    };
+    return map[mode] || 'Selecione uma ferramenta acima ou ajuste os valores manualmente.';
+  }
+
+  function clearCfgCalibActive(){
+    cfgCalibMode = null;
+    document.querySelectorAll('#cfgCalibWrap .calib-btn').forEach(b => b.classList.remove('is-active'));
+  }
+
+  function cfgCanvasPointFromEvent(canvas, evt){
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const cx = (evt.touches ? evt.touches[0].clientX : evt.clientX);
+    const cy = (evt.touches ? evt.touches[0].clientY : evt.clientY);
+    return { x: (cx - rect.left) * scaleX, y: (cy - rect.top) * scaleY };
+  }
+
+  const adminCalibCanvas = $('adminCalibCanvas');
+  adminCalibCanvas.addEventListener('click', e => {
+    if (!cfgCalibMode || !adminCalib.bgImage) return;
+    applyAdminCalibration(cfgCalibMode, cfgCanvasPointFromEvent(adminCalibCanvas, e));
+  });
+
+  function applyAdminCalibration(mode, pt){
+    switch(mode){
+      case 'marginLeft':
+        adminCalib.margins.left = Math.max(0, Math.round(pt.x));
+        clearCfgCalibActive();
+        syncCfgControlsFromState();
+        break;
+      case 'marginRight':
+        adminCalib.margins.right = Math.max(0, Math.round(adminCalib.bgWidth - pt.x));
+        clearCfgCalibActive();
+        syncCfgControlsFromState();
+        break;
+      case 'addLine':
+        adminCalib.lineYs.push(Math.round(pt.y));
+        renderCfgLineList();
+        break;
+      case 'removeLine': {
+        if (adminCalib.lineYs.length){
+          const threshold = Math.max(10, adminCalib.bgHeight * 0.012);
+          let nearestIdx = -1, nearestDist = Infinity;
+          adminCalib.lineYs.forEach((y, i) => {
+            const d = Math.abs(y - pt.y);
+            if (d < nearestDist){ nearestDist = d; nearestIdx = i; }
+          });
+          if (nearestIdx >= 0 && nearestDist <= threshold){
+            adminCalib.lineYs.splice(nearestIdx, 1);
+            renderCfgLineList();
+          }
+        }
+        break;
+      }
+    }
+    drawAdminCalibration();
+  }
+
+  function drawAdminCalibration(){
+    if (!adminCalib.bgImage) return;
+    adminCalibCanvas.width = adminCalib.bgWidth;
+    adminCalibCanvas.height = adminCalib.bgHeight;
+    const ctx = adminCalibCanvas.getContext('2d');
+    ctx.drawImage(adminCalib.bgImage, 0, 0, adminCalibCanvas.width, adminCalibCanvas.height);
+
+    const { left, right } = adminCalib.margins;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(181,52,47,0.85)';
+    ctx.lineWidth = Math.max(2, adminCalibCanvas.width * 0.0016);
+    ctx.setLineDash([10, 7]);
+    ctx.beginPath(); ctx.moveTo(left, 0); ctx.lineTo(left, adminCalibCanvas.height); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(adminCalibCanvas.width - right, 0); ctx.lineTo(adminCalibCanvas.width - right, adminCalibCanvas.height); ctx.stroke();
+    ctx.restore();
+
+    const fontPx = Math.max(11, Math.round(adminCalibCanvas.width * 0.014));
+    adminCalib.lineYs.forEach((y, i) => {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(30,58,138,0.7)';
+      ctx.lineWidth = Math.max(1, adminCalibCanvas.width * 0.0009);
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.moveTo(left, y);
+      ctx.lineTo(adminCalibCanvas.width - right, y);
+      ctx.stroke();
+
+      const r = Math.max(8, fontPx * 0.65);
+      ctx.fillStyle = 'rgba(30,58,138,0.85)';
+      ctx.beginPath();
+      ctx.arc(left, y, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.font = `600 ${fontPx * 0.85}px "IBM Plex Mono", monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(String(i + 1), left, y + 1);
+      ctx.restore();
+    });
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+  }
+
+  $('cfgSaveLayoutBtn').addEventListener('click', async () => {
+    if (!cfgSelectedUserId) return;
+    const btn = $('cfgSaveLayoutBtn');
+    btn.disabled = true;
+    try {
+      await CadernoAuth.apiFetch(`/api/admin/users/${cfgSelectedUserId}/layout`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          marginLeft: adminCalib.margins.left,
+          marginRight: adminCalib.margins.right,
+          lineYs: adminCalib.lineYs
+        })
+      });
+      showMsg($('cfgOk'), 'Margens e linhas salvas.', true);
+    } catch (err){
+      showMsg($('cfgError'), err.message || 'Falha ao salvar margens e linhas.', false);
     } finally {
       btn.disabled = false;
     }
