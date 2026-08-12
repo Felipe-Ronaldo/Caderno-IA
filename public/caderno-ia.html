@@ -4,13 +4,25 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Caderno IA — gerador de páginas de caderno</title>
+<script>
+  /* Aplica o tema salvo (ou a preferência do sistema) antes da primeira
+     pintura da página, para não "piscar" o tema errado por um instante. */
+  (function(){
+    try {
+      var saved = localStorage.getItem('caderno-ia-theme');
+      var theme = saved || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', theme);
+    } catch(e){ document.documentElement.setAttribute('data-theme', 'light'); }
+  })();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Patrick+Hand&family=Shadows+Into+Light&family=Indie+Flower&family=Homemade+Apple&family=Gochi+Hand&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
-  :root{
+  :root, :root[data-theme="light"]{
+    color-scheme: light;
     --cover:#1f3b32;
     --cover-2:#122019;
     --paper:#f7f6ef;
@@ -28,7 +40,85 @@
     --font-display:'Space Grotesk',sans-serif;
     --font-body:'IBM Plex Sans',sans-serif;
     --font-mono:'IBM Plex Mono',monospace;
+
+    --text-loud:#fbf9f2;
+    --text-soft:#c9d8cf;
+    --text-muted:#dfe9e3;
+    --text-faint:#b9c6bd;
+    --chip-bg:rgba(255,255,255,0.07);
+    --chip-border:rgba(255,255,255,0.12);
+    --chip-bg-hover:rgba(255,255,255,0.16);
+    --chip-border-strong:rgba(255,255,255,0.25);
+    --chip-bg-hover-strong:rgba(255,255,255,0.12);
+
+    --surface:#ffffff;
+    --surface-border:#d8dccf;
+    --surface-border-2:#e4e1d4;
+    --surface-alt:#fffefb;
+    --surface-alt-border:#c7cabb;
+    --page-canvas-border:#eeeeee;
+
+    --login-error-bg:#fdf1ef;
+    --login-error-border:#f2d6d3;
+    --status-pending-bg:#eef0e8;
+    --status-loading-bg:#fff3cf;
+    --status-loading-text:#8a6d00;
+    --status-done-bg:#e2f3e6;
+    --status-done-text:#256a3a;
+    --status-error-bg:#fbe4e2;
+    --on-highlight:#12244f;
+    --toast-bg:#12244f;
+    --btn-primary-bg:var(--ink);
+    --btn-primary-bg-hover:var(--ink-dark);
+    --btn-pen-bg:var(--red-pen);
+    --btn-pen-bg-hover:#8f2924;
   }
+
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --cover:#0d130f;
+    --cover-2:#05080a;
+    --paper:#21251f;
+    --paper-line:#3a453d;
+    --paper-red:#6b3a35;
+    --ink:#8fb4ff;
+    --ink-dark:#eef1e9;
+    --pencil:#c9cbc0;
+    --pencil-soft:#8f9186;
+    --red-pen:#ff8c82;
+    --shadow:0 14px 34px -16px rgba(0,0,0,0.65);
+
+    --text-loud:#f5f3ea;
+    --text-soft:#c7d1c9;
+    --text-muted:#d8e0da;
+    --text-faint:#9aa79e;
+    --chip-bg:rgba(255,255,255,0.05);
+    --chip-border:rgba(255,255,255,0.10);
+    --chip-bg-hover:rgba(255,255,255,0.14);
+    --chip-border-strong:rgba(255,255,255,0.22);
+    --chip-bg-hover-strong:rgba(255,255,255,0.10);
+
+    --surface:#262a25;
+    --surface-border:#3a4038;
+    --surface-border-2:#3a4038;
+    --surface-alt:#1c201b;
+    --surface-alt-border:#3a4038;
+    --page-canvas-border:#3a4038;
+
+    --login-error-bg:#3a201d;
+    --login-error-border:#5c2f2a;
+    --status-pending-bg:#2c322a;
+    --status-loading-bg:#3a3320;
+    --status-loading-text:#e0c060;
+    --status-done-bg:#22352a;
+    --status-done-text:#7fd79a;
+    --status-error-bg:#3a221f;
+    --btn-primary-bg:#3b63c9;
+    --btn-primary-bg-hover:#2a4a9c;
+    --btn-pen-bg:#d1453c;
+    --btn-pen-bg-hover:#a8332c;
+  }
+  html{background:var(--cover-2);}
   *,*::before,*::after{box-sizing:border-box;}
   html{scroll-behavior:smooth;}
   body{
@@ -40,6 +130,7 @@
       radial-gradient(circle at 10% 0%, rgba(255,255,255,0.05), transparent 40%),
       linear-gradient(180deg,var(--cover) 0%,var(--cover-2) 100%);
     background-attachment:fixed;
+    transition:background .2s, color .2s;
   }
   a{color:inherit;}
   h1,h2,h3{font-family:var(--font-display); margin:0; letter-spacing:-0.01em;}
@@ -56,19 +147,31 @@
     width:40px; height:40px; border-radius:9px; flex:none;
     background:linear-gradient(155deg,var(--highlight),#f2c559 60%, var(--red-pen));
     display:flex; align-items:center; justify-content:center;
-    font-family:var(--font-display); font-weight:700; color:var(--ink-dark); font-size:15px;
+    font-family:var(--font-display); font-weight:700; color:var(--on-highlight); font-size:15px;
     box-shadow:inset 0 0 0 2px rgba(255,255,255,0.35);
   }
-  .brand__title{color:#fbf9f2; font-size:1.35rem; font-weight:600;}
-  .brand__sub{color:#c9d8cf; font-family:var(--font-mono); font-size:0.72rem; letter-spacing:.06em; text-transform:uppercase;}
-  .steps-nav{display:flex; gap:6px; flex-wrap:wrap;}
+  .brand__title{color:var(--text-loud); font-size:1.35rem; font-weight:600;}
+  .brand__sub{color:var(--text-soft); font-family:var(--font-mono); font-size:0.72rem; letter-spacing:.06em; text-transform:uppercase;}
+  .steps-nav{display:flex; gap:6px; flex-wrap:wrap; align-items:center;}
   .steps-nav a{
-    font-family:var(--font-mono); font-size:0.72rem; color:#dfe9e3;
-    background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.12);
+    font-family:var(--font-mono); font-size:0.72rem; color:var(--text-muted);
+    background:var(--chip-bg); border:1px solid var(--chip-border);
     padding:7px 11px; border-radius:99px; text-decoration:none; transition:background .15s, transform .15s;
   }
-  .steps-nav a:hover{background:rgba(255,255,255,0.16);}
+  .steps-nav a:hover{background:var(--chip-bg-hover);}
   .steps-nav a:focus-visible{outline:2px solid var(--highlight); outline-offset:2px;}
+
+  /* ---------- alternador de tema ---------- */
+  .theme-toggle{
+    display:inline-flex; align-items:center; gap:6px;
+    font-family:var(--font-mono); font-size:0.72rem; color:var(--text-muted);
+    background:var(--chip-bg); border:1px solid var(--chip-border);
+    padding:7px 12px; border-radius:99px; cursor:pointer; transition:background .15s;
+    line-height:1;
+  }
+  .theme-toggle:hover{background:var(--chip-bg-hover);}
+  .theme-toggle:focus-visible{outline:2px solid var(--highlight); outline-offset:2px;}
+  .theme-toggle__icon{font-size:0.9rem;}
 
   /* ---------- login gate ---------- */
   .login-gate{
@@ -92,7 +195,7 @@
   .login-card p.login-sub{color:var(--pencil); font-size:0.85rem; margin:0 0 18px;}
   .login-error{
     display:none; font-family:var(--font-mono); font-size:0.78rem; color:var(--red-pen);
-    background:#fdf1ef; border:1px solid #f2d6d3; border-radius:8px; padding:8px 12px; margin-bottom:14px;
+    background:var(--login-error-bg); border:1px solid var(--login-error-border); border-radius:8px; padding:8px 12px; margin-bottom:14px;
   }
   .login-error.is-visible{display:block;}
   .login-gate[hidden]{display:none;}
@@ -100,20 +203,20 @@
   /* ---------- user chip (topbar) ---------- */
   .user-chip{
     display:flex; align-items:center; gap:10px; flex-wrap:wrap;
-    font-family:var(--font-mono); font-size:0.76rem; color:#dfe9e3;
+    font-family:var(--font-mono); font-size:0.76rem; color:var(--text-muted);
   }
   .user-chip__credits{
-    background:var(--highlight); color:var(--ink-dark); font-weight:700;
+    background:var(--highlight); color:var(--on-highlight); font-weight:700;
     padding:6px 11px; border-radius:99px; white-space:nowrap;
   }
   .user-chip__credits.is-low{background:var(--red-pen); color:#fff;}
   .user-chip__name{opacity:0.85;}
   .user-chip a, .user-chip button.link-btn{
-    font-family:var(--font-mono); font-size:0.76rem; color:#dfe9e3; background:transparent;
-    border:1px solid rgba(255,255,255,0.25); border-radius:99px; padding:6px 12px;
+    font-family:var(--font-mono); font-size:0.76rem; color:var(--text-muted); background:transparent;
+    border:1px solid var(--chip-border-strong); border-radius:99px; padding:6px 12px;
     text-decoration:none; cursor:pointer;
   }
-  .user-chip a:hover, .user-chip button.link-btn:hover{background:rgba(255,255,255,0.12);}
+  .user-chip a:hover, .user-chip button.link-btn:hover{background:var(--chip-bg-hover-strong);}
   #appRoot[hidden]{display:none;}
 
   /* ---------- notebook shell ---------- */
@@ -124,6 +227,7 @@
     margin-left:34px;
     box-shadow:var(--shadow);
     overflow:hidden;
+    transition:background .2s;
   }
   .notebook::before{
     content:'';
@@ -161,11 +265,11 @@
   .field .hint{font-size:0.78rem; color:var(--pencil-soft); margin-top:4px;}
   input[type="text"], input[type="number"], textarea, select{
     width:100%; font-family:var(--font-body); font-size:0.92rem; color:var(--ink-dark);
-    background:#fff; border:1.5px solid #d8dccf; border-radius:var(--radius-sm);
-    padding:9px 11px; transition:border-color .15s, box-shadow .15s;
+    background:var(--surface); border:1.5px solid var(--surface-border); border-radius:var(--radius-sm);
+    padding:9px 11px; transition:border-color .15s, box-shadow .15s, background .2s;
   }
   input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-visible, canvas:focus-visible{
-    outline:none; border-color:var(--ink); box-shadow:0 0 0 3px rgba(30,58,138,0.18);
+    outline:none; border-color:var(--ink); box-shadow:0 0 0 3px color-mix(in srgb, var(--ink) 18%, transparent);
   }
   textarea{resize:vertical; min-height:64px; line-height:1.5;}
   .range-row{display:flex; align-items:center; gap:10px;}
@@ -181,12 +285,12 @@
     transition:transform .12s ease, background .15s, border-color .15s;
   }
   button:active{transform:translateY(1px);}
-  .btn--primary{background:var(--ink); color:#fff;}
-  .btn--primary:hover{background:var(--ink-dark);}
+  .btn--primary{background:var(--btn-primary-bg); color:#fff;}
+  .btn--primary:hover{background:var(--btn-primary-bg-hover);}
   .btn--ghost{background:transparent; color:var(--ink); border-color:var(--ink);}
-  .btn--ghost:hover{background:rgba(30,58,138,0.08);}
-  .btn--pen{background:var(--red-pen); color:#fff;}
-  .btn--pen:hover{background:#8f2924;}
+  .btn--ghost:hover{background:color-mix(in srgb, var(--ink) 8%, transparent);}
+  .btn--pen{background:var(--btn-pen-bg); color:#fff;}
+  .btn--pen:hover{background:var(--btn-pen-bg-hover);}
   .btn--small{padding:6px 12px; font-size:0.78rem;}
   .btn--block{width:100%;}
   button:disabled{opacity:0.45; cursor:not-allowed; transform:none;}
@@ -194,14 +298,14 @@
 
   /* ---------- aviso de caderno ainda não configurado pelo admin ---------- */
   .calib-placeholder{
-    border:1.5px dashed #c7cabb; border-radius:var(--radius); padding:34px 20px; text-align:center;
-    color:var(--pencil-soft); font-size:0.9rem; background:#fffefb; margin-bottom:18px;
+    border:1.5px dashed var(--surface-alt-border); border-radius:var(--radius); padding:34px 20px; text-align:center;
+    color:var(--pencil-soft); font-size:0.9rem; background:var(--surface-alt); margin-bottom:18px;
   }
 
   /* ---------- style preview ---------- */
   .style-preview{
     background:repeating-linear-gradient(#fff, #fff 27px, var(--paper-line) 28px);
-    border:1px solid #d8dccf; border-radius:8px; padding:14px 18px; margin-bottom:18px;
+    border:1px solid var(--surface-border); border-radius:8px; padding:14px 18px; margin-bottom:18px;
     position:relative; overflow:hidden;
   }
   .style-preview::before{
@@ -210,47 +314,47 @@
   #stylePreviewCanvas{width:100%; height:90px; display:block;}
   .color-presets{display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
   .swatch{
-    width:28px; height:28px; border-radius:50%; border:2px solid #fff; box-shadow:0 0 0 1.5px #d8dccf;
+    width:28px; height:28px; border-radius:50%; border:2px solid var(--surface); box-shadow:0 0 0 1.5px var(--surface-border);
     cursor:pointer; padding:0;
   }
   .swatch.is-active{box-shadow:0 0 0 2px var(--ink);}
 
   /* ---------- step 4 questions ---------- */
   .qa-card{
-    background:#fff; border:1.5px solid #e4e1d4; border-radius:10px; padding:14px 16px; margin-bottom:12px;
+    background:var(--surface); border:1.5px solid var(--surface-border-2); border-radius:10px; padding:14px 16px; margin-bottom:12px;
   }
   .qa-card__head{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px;}
   .qa-num{font-family:var(--font-mono); font-size:0.78rem; color:var(--pencil-soft);}
   .qa-status{font-family:var(--font-mono); font-size:0.72rem; padding:3px 9px; border-radius:99px; font-weight:600;}
-  .qa-status--pending{background:#eef0e8; color:var(--pencil);}
-  .qa-status--loading{background:#fff3cf; color:#8a6d00;}
-  .qa-status--done{background:#e2f3e6; color:#256a3a;}
-  .qa-status--error{background:#fbe4e2; color:var(--red-pen);}
+  .qa-status--pending{background:var(--status-pending-bg); color:var(--pencil);}
+  .qa-status--loading{background:var(--status-loading-bg); color:var(--status-loading-text);}
+  .qa-status--done{background:var(--status-done-bg); color:var(--status-done-text);}
+  .qa-status--error{background:var(--status-error-bg); color:var(--red-pen);}
   .qa-remove{background:none; border:none; color:var(--pencil-soft); font-size:1.1rem; padding:2px 6px; border-radius:6px;}
-  .qa-remove:hover{color:var(--red-pen); background:#fbe4e2;}
+  .qa-remove:hover{color:var(--red-pen); background:var(--status-error-bg);}
   .qa-error{font-size:0.78rem; color:var(--red-pen); margin-top:6px;}
   .qa-actions{display:flex; justify-content:flex-end; margin-top:8px;}
   .empty-state{color:var(--pencil-soft); font-size:0.88rem; padding:16px 0;}
 
   /* ---------- step 5 gerar ---------- */
-  .page-card{background:#fff; border:1.5px solid #e4e1d4; border-radius:10px; padding:12px; margin-bottom:18px; box-shadow:var(--shadow);}
+  .page-card{background:var(--surface); border:1.5px solid var(--surface-border-2); border-radius:10px; padding:12px; margin-bottom:18px; box-shadow:var(--shadow);}
   .page-card__head{display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;}
   .page-label{font-family:var(--font-mono); font-size:0.8rem; color:var(--pencil);}
-  .page-canvas{width:100%; height:auto; border-radius:6px; border:1px solid #eee; display:block;}
+  .page-canvas{width:100%; height:auto; border-radius:6px; border:1px solid var(--page-canvas-border); display:block;}
   #exportBar{display:none; gap:10px; align-items:center; flex-wrap:wrap; margin-top:14px; padding-top:14px; border-top:1px dashed rgba(30,58,138,0.18);}
-  #pageCountChip{font-family:var(--font-mono); font-size:0.8rem; background:var(--highlight); color:var(--ink-dark); padding:5px 11px; border-radius:99px; font-weight:600;}
+  #pageCountChip{font-family:var(--font-mono); font-size:0.8rem; background:var(--highlight); color:var(--on-highlight); padding:5px 11px; border-radius:99px; font-weight:600;}
 
   /* ---------- toast ---------- */
   #toast{
     position:fixed; left:50%; bottom:26px; transform:translate(-50%,12px);
-    background:var(--ink-dark); color:#fff; padding:11px 18px; border-radius:99px;
+    background:var(--toast-bg); color:#fff; padding:11px 18px; border-radius:99px;
     font-size:0.86rem; box-shadow:var(--shadow); opacity:0; pointer-events:none;
     transition:opacity .2s, transform .2s; z-index:50; max-width:90vw; text-align:center;
   }
   #toast.is-visible{opacity:1; transform:translate(-50%,0);}
 
-  footer{text-align:center; color:#b9c6bd; font-size:0.78rem; padding:26px 20px 10px;}
-  footer a{color:#dfe9e3;}
+  footer{text-align:center; color:var(--text-faint); font-size:0.78rem; padding:26px 20px 10px;}
+  footer a{color:var(--text-muted);}
 
   @media (prefers-reduced-motion:reduce){
     html{scroll-behavior:auto;}
@@ -292,6 +396,10 @@
       <a href="#step3">01 · Estilo</a>
       <a href="#step4">02 · Perguntas</a>
       <a href="#step5">03 · Exportar</a>
+      <button type="button" class="theme-toggle" id="themeToggleBtn" aria-label="Alternar tema claro/escuro">
+        <span class="theme-toggle__icon" id="themeToggleIcon">🌙</span>
+        <span id="themeToggleLabel">Escuro</span>
+      </button>
     </nav>
     <div class="user-chip" id="userChip">
       <span class="user-chip__name" id="userChipName"></span>
@@ -481,6 +589,36 @@
     nextId: 1,
     pages: []
   };
+
+  /* =====================================================================
+     TEMA CLARO / ESCURO
+  ===================================================================== */
+  function applyThemeToggleUI(theme){
+    const icon = $('themeToggleIcon');
+    const label = $('themeToggleLabel');
+    if (!icon || !label) return;
+    if (theme === 'dark'){
+      icon.textContent = '☀️';
+      label.textContent = 'Claro';
+    } else {
+      icon.textContent = '🌙';
+      label.textContent = 'Escuro';
+    }
+  }
+
+  (function initTheme(){
+    const current = document.documentElement.getAttribute('data-theme') || 'light';
+    applyThemeToggleUI(current);
+    const btn = $('themeToggleBtn');
+    if (btn){
+      btn.addEventListener('click', () => {
+        const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', next);
+        try { localStorage.setItem('caderno-ia-theme', next); } catch(e){}
+        applyThemeToggleUI(next);
+      });
+    }
+  })();
 
   /* =====================================================================
      UTILITÁRIOS
@@ -758,9 +896,16 @@
     await ensureFontsLoaded();
     const canvas = $('stylePreviewCanvas');
     const ctx = canvas.getContext('2d');
-    canvas.width = canvas.clientWidth || 900;
-    canvas.height = 90;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    /* Renderiza na resolução real da tela (retina/alta densidade) para a
+       prévia não ficar serrilhada — sem isso, o canvas é desenhado a 1px
+       por pixel de CSS e o navegador amplia a imagem, pixelizando. */
+    const dpr = window.devicePixelRatio || 1;
+    const cssWidth = canvas.clientWidth || 900;
+    const cssHeight = 90;
+    canvas.width = Math.round(cssWidth * dpr);
+    canvas.height = Math.round(cssHeight * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, cssWidth, cssHeight);
     ctx.font = `${state.fontSize}px "${state.fontFamily}"`;
     ctx.textBaseline = 'alphabetic';
     /* mostra o "R: " na cor da pergunta e só o texto da resposta na cor da resposta */
@@ -1013,14 +1158,25 @@
       }
 
       const canvases = [];
+      /* Fator de super-amostragem: desenha cada página numa resolução maior
+         e depois reduz para o tamanho final. Isso suaviza os contornos das
+         letras (evita o "serrilhado"/pixelizado), simulando melhor um traço
+         de caneta real. O tamanho final da página (bgWidth x bgHeight) não
+         muda, então PDF, margens e linhas calibradas continuam idênticos.
+         O fator se ajusta ao tamanho do modelo para não estourar limites
+         de memória/canvas em folhas já configuradas em alta resolução. */
+      const RENDER_SUPERSAMPLE = Math.max(1, Math.min(3, Math.floor(6000 / Math.max(state.bgWidth, state.bgHeight, 1))));
       for (const pageLines of pageChunks){
-        const canvas = document.createElement('canvas');
-        canvas.width = state.bgWidth;
-        canvas.height = state.bgHeight;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(state.bgImage, 0, 0, canvas.width, canvas.height);
-        ctx.font = `${state.fontSize}px "${state.fontFamily}"`;
-        ctx.textBaseline = 'alphabetic';
+        const bigCanvas = document.createElement('canvas');
+        bigCanvas.width = state.bgWidth * RENDER_SUPERSAMPLE;
+        bigCanvas.height = state.bgHeight * RENDER_SUPERSAMPLE;
+        const bctx = bigCanvas.getContext('2d');
+        bctx.imageSmoothingEnabled = true;
+        bctx.imageSmoothingQuality = 'high';
+        bctx.scale(RENDER_SUPERSAMPLE, RENDER_SUPERSAMPLE);
+        bctx.drawImage(state.bgImage, 0, 0, state.bgWidth, state.bgHeight);
+        bctx.font = `${state.fontSize}px "${state.fontFamily}"`;
+        bctx.textBaseline = 'alphabetic';
         pageLines.forEach((line, i) => {
           if (!line.blank && line.text && lineYs[i] != null){
             const y = lineYs[i];
@@ -1028,14 +1184,23 @@
             if (line.role === 'answer'){
               /* o "R: " (prefixLen) segue a cor da pergunta; só o texto
                  da resposta em si usa a cor da resposta */
-              ctx.fillStyle = state.answerColor;
-              drawHandwrittenText(ctx, line.text, x, y, state.jitterLevel, line.prefixLen, state.questionColor, state.answerColor, state.letterSpacing);
+              bctx.fillStyle = state.answerColor;
+              drawHandwrittenText(bctx, line.text, x, y, state.jitterLevel, line.prefixLen, state.questionColor, state.answerColor, state.letterSpacing);
             } else {
-              ctx.fillStyle = state.questionColor;
-              drawHandwrittenText(ctx, line.text, x, y, state.jitterLevel, 0, null, null, state.letterSpacing);
+              bctx.fillStyle = state.questionColor;
+              drawHandwrittenText(bctx, line.text, x, y, state.jitterLevel, 0, null, null, state.letterSpacing);
             }
           }
         });
+
+        // reduz de volta para o tamanho final -- é essa redução que suaviza as bordas
+        const canvas = document.createElement('canvas');
+        canvas.width = state.bgWidth;
+        canvas.height = state.bgHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(bigCanvas, 0, 0, canvas.width, canvas.height);
         canvases.push(canvas);
       }
 
