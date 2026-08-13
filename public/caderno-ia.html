@@ -395,7 +395,8 @@
     <nav class="steps-nav" aria-label="Etapas">
       <a href="#step3">01 · Estilo</a>
       <a href="#step4">02 · Perguntas</a>
-      <a href="#step5">03 · Exportar</a>
+      <a href="#stepText">03 · Texto pronto</a>
+      <a href="#step5">04 · Exportar</a>
       <button type="button" class="theme-toggle" id="themeToggleBtn" aria-label="Alternar tema claro/escuro">
         <span class="theme-toggle__icon" id="themeToggleIcon">🌙</span>
         <span id="themeToggleLabel">Escuro</span>
@@ -486,7 +487,7 @@
         <h2 class="step__title">Adicione as perguntas</h2>
       </div>
       <p class="step__desc">Cole várias perguntas de uma vez (uma por linha) ou adicione uma de cada vez. Depois, gere as respostas com IA ou digite as suas.</p>
-      <p class="calib-hint" style="margin-bottom:16px;">Pode digitar normalmente com acentos e pontuação aqui — na hora de gerar as páginas (etapa 05), acentos, cedilhas (Õ, Ô, ê, ç...) e sinais como ; : ( ) são removidos automaticamente. Só ficam vírgula, ponto, exclamação e interrogação, que são os sinais que a fonte manuscrita tem.</p>
+      <p class="calib-hint" style="margin-bottom:16px;">Pode digitar normalmente com acentos e pontuação aqui — na hora de gerar as páginas (etapa 04), acentos, cedilhas (Õ, Ô, ê, ç...) e sinais como ; : ( ) são removidos automaticamente. Só ficam vírgula, ponto, exclamação e interrogação, que são os sinais que a fonte manuscrita tem.</p>
 
       <div class="field">
         <label for="bulkQuestions">Colar várias perguntas (uma por linha)</label>
@@ -532,10 +533,31 @@
       </p>
     </section>
 
-    <!-- ================= ETAPA 5 — GERAR E EXPORTAR ================= -->
-    <section class="step" id="step5">
+    <!-- ================= ETAPA 03 — TEXTO PRONTO ================= -->
+    <section class="step" id="stepText">
       <div class="step__head">
         <span class="step__num">03</span>
+        <h2 class="step__title">Cole um texto pronto (opcional)</h2>
+      </div>
+      <p class="step__desc">Já tem um texto pronto (um resumo, uma redação, uma anotação)? Cole aqui que o site formata sozinho para caber nas linhas do seu caderno — sem perguntas nem "R:", só o texto mesmo. Esses blocos entram nas páginas depois das perguntas, na ordem em que aparecem aqui embaixo.</p>
+      <p class="calib-hint" style="margin-bottom:16px;">Assim como nas perguntas, acentos, cedilhas e sinais como ; : ( ) são removidos automaticamente na hora de gerar as páginas — a fonte manuscrita só tem vírgula, ponto, exclamação e interrogação.</p>
+
+      <div class="field">
+        <label for="freeTextInput">Colar texto</label>
+        <textarea id="freeTextInput" rows="6" placeholder="Cole aqui o texto que você já tem pronto..."></textarea>
+        <div class="btn-row" style="margin-top:8px;">
+          <button type="button" class="btn--ghost" id="addTextBlockBtn">Adicionar texto</button>
+        </div>
+      </div>
+
+      <div id="textBlocksList"></div>
+      <p class="empty-state" id="textBlocksEmpty">Nenhum texto adicionado ainda.</p>
+    </section>
+
+    <!-- ================= ETAPA 04 — GERAR E EXPORTAR ================= -->
+    <section class="step" id="step5">
+      <div class="step__head">
+        <span class="step__num">04</span>
         <h2 class="step__title">Gere e exporte as páginas</h2>
       </div>
       <p class="step__desc">O texto é distribuído respeitando as linhas configuradas. Quando uma folha lota, uma nova página é criada automaticamente, continuando o conteúdo.</p>
@@ -586,6 +608,7 @@
     answerColor: '#1e3a8a',
     jitterLevel: 'light',
     questions: [],
+    textBlocks: [],
     nextId: 1,
     pages: []
   };
@@ -924,7 +947,7 @@
     const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
     if (lines.length === 0) return;
     lines.forEach(line => {
-      state.questions.push({ id: 'q' + (state.nextId++), question: line, answer: '', status: 'pending', errorMsg: '' });
+      state.questions.push({ id: 'q' + (state.nextId++), question: line, answer: '', status: 'pending', errorMsg: '', includeQuestion: true });
     });
     renderQuestions();
   }
@@ -990,6 +1013,17 @@
       qInput.placeholder = 'Digite a pergunta';
       qInput.addEventListener('input', () => { q.question = qInput.value; });
 
+      const includeRow = document.createElement('label');
+      includeRow.style.cssText = 'display:flex; align-items:center; gap:7px; margin-top:8px; font-size:0.8rem; color:var(--pencil); cursor:pointer;';
+      const includeCheckbox = document.createElement('input');
+      includeCheckbox.type = 'checkbox';
+      includeCheckbox.checked = q.includeQuestion !== false;
+      includeCheckbox.addEventListener('change', () => { q.includeQuestion = includeCheckbox.checked; });
+      const includeText = document.createElement('span');
+      includeText.textContent = 'Incluir a pergunta na folha (se desmarcar, só a resposta é escrita)';
+      includeRow.appendChild(includeCheckbox);
+      includeRow.appendChild(includeText);
+
       const aInput = document.createElement('textarea');
       aInput.className = 'qa-answer';
       aInput.rows = 3;
@@ -1012,6 +1046,7 @@
 
       card.appendChild(head);
       card.appendChild(qInput);
+      card.appendChild(includeRow);
       card.appendChild(aInput);
       card.appendChild(errorEl);
       card.appendChild(actions);
@@ -1031,6 +1066,56 @@
     const errorEl = card.querySelector('.qa-error');
     errorEl.textContent = q.status === 'error' ? q.errorMsg : '';
   }
+
+  /* =====================================================================
+     ETAPA 03 — TEXTO PRONTO (blocos de texto livre, sem pergunta/resposta)
+  ===================================================================== */
+  function renderTextBlocks(){
+    const container = $('textBlocksList');
+    container.innerHTML = '';
+    $('textBlocksEmpty').style.display = state.textBlocks.length ? 'none' : 'block';
+
+    state.textBlocks.forEach((t, i) => {
+      const card = document.createElement('div');
+      card.className = 'qa-card';
+      card.setAttribute('data-id', t.id);
+
+      const head = document.createElement('div');
+      head.className = 'qa-card__head';
+      const num = document.createElement('span');
+      num.className = 'qa-num';
+      num.textContent = `Texto ${i + 1}`;
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'qa-remove';
+      removeBtn.setAttribute('aria-label', 'Remover texto');
+      removeBtn.textContent = '✕';
+      removeBtn.addEventListener('click', () => {
+        state.textBlocks = state.textBlocks.filter(x => x.id !== t.id);
+        renderTextBlocks();
+      });
+      head.appendChild(num);
+      head.appendChild(removeBtn);
+
+      const tInput = document.createElement('textarea');
+      tInput.rows = 4;
+      tInput.value = t.text;
+      tInput.placeholder = 'Texto que vai para a folha';
+      tInput.addEventListener('input', () => { t.text = tInput.value; });
+
+      card.appendChild(head);
+      card.appendChild(tInput);
+      container.appendChild(card);
+    });
+  }
+
+  $('addTextBlockBtn').addEventListener('click', () => {
+    const input = $('freeTextInput');
+    const text = input.value.trim();
+    if (!text) return;
+    state.textBlocks.push({ id: 't' + (state.nextId++), text });
+    input.value = '';
+    renderTextBlocks();
+  });
 
   /* A chamada de IA agora passa pelo backend (/api/ai/generate), que:
      - guarda a chave da API de IA no servidor (nunca no navegador);
@@ -1100,7 +1185,12 @@
       return;
     }
     const validQs = state.questions.filter(q => q.question.trim());
-    if (validQs.length === 0){ showToast('Adicione pelo menos uma pergunta na etapa 04.'); document.getElementById('step4').scrollIntoView({behavior:'smooth'}); return; }
+    const validTexts = state.textBlocks.filter(t => t.text.trim());
+    if (validQs.length === 0 && validTexts.length === 0){
+      showToast('Adicione pelo menos uma pergunta (etapa 02) ou um texto pronto (etapa 03).');
+      document.getElementById('step4').scrollIntoView({behavior:'smooth'});
+      return;
+    }
 
     const btn = $('generatePagesBtn');
     btn.disabled = true;
@@ -1117,16 +1207,35 @@
       const writableWidth = Math.max(30, state.bgWidth - state.margins.left - state.margins.right - safetyPadding);
       const lines = [];
 
-      validQs.forEach((q, i) => {
-        const qLines = wrapWithPrefix(mctx, `${i + 1}) `, q.question.trim(), writableWidth, state.letterSpacing);
-        qLines.forEach(l => { l.role = 'question'; });
-        lines.push(...qLines);
-        lines.push({ text:'', indent:0, blank:true });
+      /* Perguntas & respostas. Quando "incluir a pergunta" está desmarcado,
+         só a resposta entra na folha (numeração pula esse item, sem "N)"
+         nem "R:" — vira um texto corrido igual aos blocos da etapa 03). */
+      let visibleQNum = 0;
+      validQs.forEach((q) => {
+        const includeQuestion = q.includeQuestion !== false;
+        if (includeQuestion){
+          visibleQNum++;
+          const qLines = wrapWithPrefix(mctx, `${visibleQNum}) `, q.question.trim(), writableWidth, state.letterSpacing);
+          qLines.forEach(l => { l.role = 'question'; });
+          lines.push(...qLines);
+          lines.push({ text:'', indent:0, blank:true });
+        }
 
         const answerText = q.answer.trim() || '_________________________________';
-        const rLines = wrapWithPrefix(mctx, 'R: ', answerText, writableWidth, state.letterSpacing);
-        rLines.forEach(l => { l.role = 'answer'; });
+        const prefix = includeQuestion ? 'R: ' : '';
+        const rLines = wrapWithPrefix(mctx, prefix, answerText, writableWidth, state.letterSpacing);
+        rLines.forEach(l => { l.role = includeQuestion ? 'answer' : 'text'; });
         lines.push(...rLines);
+        lines.push({ text:'', indent:0, blank:true });
+        lines.push({ text:'', indent:0, blank:true });
+      });
+
+      /* Blocos de texto pronto (etapa 03) — entram depois das perguntas,
+         formatados como texto corrido, sem numeração nem "R:". */
+      validTexts.forEach((t) => {
+        const tLines = wrapWithPrefix(mctx, '', t.text.trim(), writableWidth, state.letterSpacing);
+        tLines.forEach(l => { l.role = 'text'; });
+        lines.push(...tLines);
         lines.push({ text:'', indent:0, blank:true });
         lines.push({ text:'', indent:0, blank:true });
       });
@@ -1186,6 +1295,11 @@
                  da resposta em si usa a cor da resposta */
               bctx.fillStyle = state.answerColor;
               drawHandwrittenText(bctx, line.text, x, y, state.jitterLevel, line.prefixLen, state.questionColor, state.answerColor, state.letterSpacing);
+            } else if (line.role === 'text'){
+              /* texto corrido (pergunta oculta ou bloco de texto pronto) --
+                 sem "R:", usa a mesma cor da resposta */
+              bctx.fillStyle = state.answerColor;
+              drawHandwrittenText(bctx, line.text, x, y, state.jitterLevel, 0, null, null, state.letterSpacing);
             } else {
               bctx.fillStyle = state.questionColor;
               drawHandwrittenText(bctx, line.text, x, y, state.jitterLevel, 0, null, null, state.letterSpacing);
@@ -1287,10 +1401,12 @@
   });
 
   $('resetBtn').addEventListener('click', () => {
-    if (!confirm('Isso vai apagar as páginas geradas e as perguntas adicionadas. Continuar?')) return;
+    if (!confirm('Isso vai apagar as páginas geradas, as perguntas e os textos adicionados. Continuar?')) return;
     state.questions = [];
+    state.textBlocks = [];
     state.pages = [];
     renderQuestions();
+    renderTextBlocks();
     renderPages();
     showToast('Tudo limpo. Pode começar de novo.');
   });
@@ -1363,6 +1479,7 @@
 
   /* estado inicial */
   renderQuestions();
+  renderTextBlocks();
   renderPages();
 
 })();
